@@ -35,7 +35,6 @@ Upload local global skills/knowledge into this repo and run `diff -> merge -> co
 ```bash
 ./ci-cli skills --upload --tools codex
 ./ci-cli skills --upload --tools all
-./ci-cli skills --uplaod --tools kiro
 ```
 
 Supported values for `--tools`:

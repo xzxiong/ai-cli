@@ -41,16 +41,12 @@ func newRootCmd() *cobra.Command {
 func newSkillsCmd() *cobra.Command {
 	var install bool
 	var upload bool
-	var uplaod bool
 	var toolsRaw string
 
 	cmd := &cobra.Command{
 		Use:   "skills",
 		Short: "Sync skills/knowledge across tools",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if uplaod {
-				upload = true
-			}
 			if (install && upload) || (!install && !upload) {
 				return errors.New("choose exactly one: --install or --upload")
 			}
@@ -69,7 +65,6 @@ func newSkillsCmd() *cobra.Command {
 
 	cmd.Flags().BoolVar(&install, "install", false, "Install skills/knowledge from repo to global tool dirs")
 	cmd.Flags().BoolVar(&upload, "upload", false, "Upload local global skills/knowledge to this repo")
-	cmd.Flags().BoolVar(&uplaod, "uplaod", false, "Alias of --upload")
 	cmd.Flags().StringVar(&toolsRaw, "tools", "all", "Comma separated tools: all,kiro,codex,claude-code")
 	return cmd
 }
