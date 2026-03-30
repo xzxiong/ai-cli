@@ -1,6 +1,6 @@
 # ai-cli
 
-`ci-cli` is a helper CLI for syncing skills/knowledge across tools.
+`ci-cli` is a helper CLI for syncing skills/knowledge/agent data across tools.
 
 ## Build
 
@@ -30,7 +30,7 @@ Install from this repo to local global tool directories:
 ./ci-cli skills --install --tools all
 ```
 
-Upload local global skills/knowledge into this repo and run `diff -> merge -> commit -> push`:
+Upload local global skills/knowledge/agent data into this repo and run `diff -> merge -> commit -> push`:
 
 ```bash
 ./ci-cli skills --upload --tools codex
@@ -48,9 +48,9 @@ Supported values for `--tools`:
 
 Default local paths:
 
-- `codex`: skills at `$CODEX_HOME/skills`, knowledge at `$CODEX_HOME/memories` (fallback `$CODEX_HOME/knowledge`, default root `~/.codex`)
-- `kiro`: skills at `$KIRO_HOME/skills`, knowledge at `$KIRO_HOME/steering` (fallback `$KIRO_HOME/knowledge`, default root `~/.kiro`)
-- `claude-code`: auto-detect root from `$CLAUDE_HOME`, `~/.claudecode`, `~/.claude-code`, `~/.claude`; sync `skills` and `knowledge` under that root
+- `codex`: skills at `$CODEX_HOME/skills`, knowledge at `$CODEX_HOME/memories` (fallback `$CODEX_HOME/knowledge`), agent at `$CODEX_HOME/agents` (fallback `$CODEX_HOME/agent`, default root `~/.codex`)
+- `kiro`: skills at `$KIRO_HOME/skills`, knowledge at `$KIRO_HOME/steering` (fallback `$KIRO_HOME/knowledge`), agent at `$KIRO_HOME/agent` (default root `~/.kiro`)
+- `claude-code`: auto-detect root from `$CLAUDE_HOME`, `~/.claudecode`, `~/.claude-code`, `~/.claude`; sync `skills`, `knowledge`, and `agents` (fallback `agent`) under that root
 
 ## Knowledge Management Notes
 

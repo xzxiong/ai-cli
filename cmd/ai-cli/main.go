@@ -19,6 +19,7 @@ type toolPaths struct {
 	name                string
 	skillsCandidates    []string
 	knowledgeCandidates []string
+	agentCandidates     []string
 }
 
 func main() {
@@ -124,8 +125,10 @@ func installTools(tools []string) error {
 
 		repoSkills := filepath.Join(repoRoot, "skills", paths.name, "skills")
 		repoKnow := filepath.Join(repoRoot, "skills", paths.name, "knowledge")
+		repoAgent := filepath.Join(repoRoot, "skills", paths.name, "agent")
 		targetSkills := pickTargetPath(paths.skillsCandidates)
 		targetKnowledge := pickTargetPath(paths.knowledgeCandidates)
+		targetAgent := pickTargetPath(paths.agentCandidates)
 
 		if exists(repoSkills) {
 			if err := copyDir(repoSkills, targetSkills); err != nil {
@@ -143,6 +146,17 @@ func installTools(tools []string) error {
 			fmt.Printf("installed %s knowledge: %s -> %s\n", t, repoKnow, targetKnowledge)
 		} else {
 			fmt.Printf("skip %s knowledge: repo dir not found %s\n", t, repoKnow)
+		}
+
+		if len(paths.agentCandidates) > 0 {
+			if exists(repoAgent) {
+				if err := copyDir(repoAgent, targetAgent); err != nil {
+					return fmt.Errorf("install %s agent failed: %w", t, err)
+				}
+				fmt.Printf("installed %s agent: %s -> %s\n", t, repoAgent, targetAgent)
+			} else {
+				fmt.Printf("skip %s agent: repo dir not found %s\n", t, repoAgent)
+			}
 		}
 	}
 
@@ -163,8 +177,10 @@ func uploadTools(tools []string) error {
 
 		repoSkills := filepath.Join(repoRoot, "skills", paths.name, "skills")
 		repoKnow := filepath.Join(repoRoot, "skills", paths.name, "knowledge")
+		repoAgent := filepath.Join(repoRoot, "skills", paths.name, "agent")
 		sourceSkills := pickExistingPath(paths.skillsCandidates)
 		sourceKnowledge := pickExistingPath(paths.knowledgeCandidates)
+		sourceAgent := pickExistingPath(paths.agentCandidates)
 
 		if sourceSkills != "" {
 			if err := copyDir(sourceSkills, repoSkills); err != nil {
@@ -182,6 +198,17 @@ func uploadTools(tools []string) error {
 			fmt.Printf("uploaded %s knowledge: %s -> %s\n", t, sourceKnowledge, repoKnow)
 		} else {
 			fmt.Printf("skip %s knowledge: local dir not found (candidates: %s)\n", t, strings.Join(paths.knowledgeCandidates, ", "))
+		}
+
+		if len(paths.agentCandidates) > 0 {
+			if sourceAgent != "" {
+				if err := copyDir(sourceAgent, repoAgent); err != nil {
+					return fmt.Errorf("upload %s agent failed: %w", t, err)
+				}
+				fmt.Printf("uploaded %s agent: %s -> %s\n", t, sourceAgent, repoAgent)
+			} else {
+				fmt.Printf("skip %s agent: local dir not found (candidates: %s)\n", t, strings.Join(paths.agentCandidates, ", "))
+			}
 		}
 	}
 
@@ -214,6 +241,7 @@ func resolveToolPaths(tool string) (toolPaths, error) {
 			name:                "codex",
 			skillsCandidates:    []string{filepath.Join(codexHome, "skills")},
 			knowledgeCandidates: []string{filepath.Join(codexHome, "memories"), filepath.Join(codexHome, "knowledge")},
+			agentCandidates:     []string{filepath.Join(codexHome, "agents"), filepath.Join(codexHome, "agent")},
 		}, nil
 	case "kiro":
 		kiroHome := getenvOrDefault("KIRO_HOME", filepath.Join(home, ".kiro"))
@@ -221,6 +249,7 @@ func resolveToolPaths(tool string) (toolPaths, error) {
 			name:                "kiro",
 			skillsCandidates:    []string{filepath.Join(kiroHome, "skills")},
 			knowledgeCandidates: []string{filepath.Join(kiroHome, "steering"), filepath.Join(kiroHome, "knowledge")},
+			agentCandidates:     []string{filepath.Join(kiroHome, "agent")},
 		}, nil
 	case "claude-code":
 		claudeHome := strings.TrimSpace(os.Getenv("CLAUDE_HOME"))
@@ -233,6 +262,7 @@ func resolveToolPaths(tool string) (toolPaths, error) {
 			name:                "claude-code",
 			skillsCandidates:    appendPaths(claudeRoots, "skills"),
 			knowledgeCandidates: appendPaths(claudeRoots, "knowledge"),
+			agentCandidates:     append(appendPaths(claudeRoots, "agents"), appendPaths(claudeRoots, "agent")...),
 		}, nil
 	default:
 		return toolPaths{}, fmt.Errorf("unsupported tool %q", tool)
