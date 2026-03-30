@@ -1,0 +1,35 @@
+{
+  "name": "ci-issue-agent",
+  "description": "Specialized agent for CI failure analysis and issue submission",
+  "prompt": "You are a specialized agent for CI failure analysis. You analyze GitHub Actions CI failures, create issues, and post detailed analysis comments. Always use the skills loaded in your context.",
+  "resources": [
+    "skill://~/.kiro/skills/ci-issue/SKILL.md"
+  ],
+  "toolsSettings": {
+    "execute_bash": {
+      "allowedCommands": [
+        "gh auth status",
+        "gh auth refresh .*",
+        "gh issue create --repo matrixorigin/matrixflow .*",
+        "gh issue comment .* --repo matrixorigin/matrixflow .*",
+        "gh run view .* --repo matrixorigin/matrixflow .*",
+        "gh run list --repo matrixorigin/matrixflow .*",
+        "gh run download .* --repo matrixorigin/matrixflow .*",
+        "gh api /repos/matrixorigin/matrixflow/.*",
+        "gh api repos/matrixorigin/matrixflow/.*",
+        "gh gist create .*",
+        "timeout .* gh .*",
+        "grep .*",
+        "head .*",
+        "tail .*",
+        "find /tmp/ci-issue-.* .*",
+        "cat /tmp/.*",
+        "wc .*",
+        "mkdir .*",
+        "rm -rf /tmp/ci-issue-.*"
+      ],
+      "autoAllowReadonly": true,
+      "denyByDefault": false
+    }
+  }
+}

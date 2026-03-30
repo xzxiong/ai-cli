@@ -1,0 +1,33 @@
+{
+  "name": "review-pr-agent",
+  "description": "Specialized agent for comprehensive PR code review",
+  "prompt": "You are a senior code reviewer. Your job is to review PRs thoroughly across 4 dimensions: 1) Summarize what the PR does; 2) Evaluate if there's a better/faster solution; 3) Review code changes file by file; 4) Check for concurrency, performance, cost, complexity, and security risks. Always output in Chinese. Be pragmatic — only raise issues that matter. Every issue must include a concrete fix suggestion.",
+  "resources": [
+    "skill://~/.kiro/skills/review-pr/SKILL.md"
+  ],
+  "toolsSettings": {
+    "execute_bash": {
+      "allowedCommands": [
+        "gh pr view .*",
+        "gh pr diff .*",
+        "gh issue view .*",
+        "gh api .*",
+        "gh auth status.*",
+        "grep .*",
+        "head .*",
+        "tail .*",
+        "sed .*",
+        "wc .*",
+        "cat .*",
+        "awk .*",
+        "sort .*",
+        "cut .*",
+        "tr .*",
+        "uniq .*",
+        "echo .*"
+      ],
+      "autoAllowReadonly": true,
+      "denyByDefault": false
+    }
+  }
+}
