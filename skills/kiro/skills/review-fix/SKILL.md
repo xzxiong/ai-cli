@@ -8,6 +8,7 @@ description: |
   - The user invokes `/review-fix <PR_URL>`
   - The user says "修复review" or "fix review" with a PR URL or number
   - The user says "fix comments" or "修复评论" with a PR URL or number
+  - The user says "review push" or "commit push review" with a PR URL or number
 ---
 
 # Review Fix Skill
@@ -43,17 +44,19 @@ kiro chat "review fix #8638 --unresolved-only"
 ### 1. 确认工作区状态
 
 ```bash
-# 确认在 git 仓库中且工作区干净
+# 确认在 git 仓库中
 git rev-parse --is-inside-work-tree
 git status --porcelain
-```
-
-- 如果有未提交的变更，提示用户先 stash 或 commit。
-- 获取当前分支名，确认与 PR head branch 一致。如果不一致，提示用户切换分支。
-
-```bash
 git branch --show-current
 ```
+
+- 获取当前分支名，确认与 PR head branch 一致。如果不一致，提示用户切换分支。
+- 检查工作区是否有未提交的变更（`git status --porcelain`）。
+
+**两种模式：**
+
+- **有未提交变更** → 进入「快速提交模式」：跳过步骤 2-5，直接执行步骤 6（commit）→ 7（push）→ 8（回复 comments）。根据 `git diff` 的内容自动生成 commit message，并匹配对应的 unresolved review comments 进行回复。
+- **工作区干净** → 进入「自动修复模式」：执行完整流程（步骤 2-8），分析 review comments 并自动修复代码。
 
 ### 2. 获取 PR Review Comments
 
@@ -180,16 +183,16 @@ git push origin <branch>
 
 ### 8. 回复 Review Comments（可选）
 
-修复完成后，对每条已修复的 review thread 回复确认：
+修复完成后，对每条已修复的 review thread 回复确认。回复内容需关联当前修复的具体问题：
 
 ```bash
-# 对每个已修复的 review thread 回复
+# 对每个已修复的 review thread 回复，感谢 reviewer 并说明具体修复内容
 gh api graphql -f query='
 mutation($threadId: ID!, $body: String!) {
   addPullRequestReviewThreadReply(input: {pullRequestReviewThreadId: $threadId, body: $body}) {
     comment { id }
   }
-}' -f threadId=<THREAD_ID> -f body="Done. Fixed in <commit_sha_short>."
+}' -f threadId=<THREAD_ID> -f body="Thanks @<reviewer_login> for the review! Fixed in <commit_sha_short>."
 ```
 
 ### 9. 输出结果
