@@ -49,7 +49,7 @@ Supported values for `--tools`:
 Default local paths:
 
 - `codex`: skills at `$CODEX_HOME/skills`, knowledge at `$CODEX_HOME/memories` (fallback `$CODEX_HOME/knowledge`), agent at `$CODEX_HOME/agents` (fallback `$CODEX_HOME/agent`, default root `~/.codex`)
-- `kiro`: skills at `$KIRO_HOME/skills`, knowledge at `$KIRO_HOME/steering` (fallback `$KIRO_HOME/knowledge`), agent at `$KIRO_HOME/agent` (default root `~/.kiro`)
+- `kiro`: skills at `$KIRO_HOME/skills`, knowledge at `$KIRO_HOME/steering` (fallback `$KIRO_HOME/knowledge`), agent at `$KIRO_HOME/agents` (default root `~/.kiro`)
 - `claude-code`: auto-detect root from `$CLAUDE_HOME`, `~/.claudecode`, `~/.claude-code`, `~/.claude`; sync `skills`, `knowledge`, and `agents` (fallback `agent`) under that root
 
 ## Knowledge Management Notes

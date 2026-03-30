@@ -125,10 +125,17 @@ func installTools(tools []string) error {
 
 		repoSkills := filepath.Join(repoRoot, "skills", paths.name, "skills")
 		repoKnow := filepath.Join(repoRoot, "skills", paths.name, "knowledge")
-		repoAgent := filepath.Join(repoRoot, "skills", paths.name, "agent")
+		repoAgentCandidates := []string{
+			filepath.Join(repoRoot, "skills", paths.name, "agents"),
+			filepath.Join(repoRoot, "skills", paths.name, "agent"),
+		}
 		targetSkills := pickTargetPath(paths.skillsCandidates)
 		targetKnowledge := pickTargetPath(paths.knowledgeCandidates)
 		targetAgent := pickTargetPath(paths.agentCandidates)
+		repoAgent := pickExistingPath(repoAgentCandidates)
+		if repoAgent == "" {
+			repoAgent = repoAgentCandidates[0]
+		}
 
 		if exists(repoSkills) {
 			if err := copyDir(repoSkills, targetSkills); err != nil {
@@ -177,10 +184,17 @@ func uploadTools(tools []string) error {
 
 		repoSkills := filepath.Join(repoRoot, "skills", paths.name, "skills")
 		repoKnow := filepath.Join(repoRoot, "skills", paths.name, "knowledge")
-		repoAgent := filepath.Join(repoRoot, "skills", paths.name, "agent")
+		repoAgentCandidates := []string{
+			filepath.Join(repoRoot, "skills", paths.name, "agents"),
+			filepath.Join(repoRoot, "skills", paths.name, "agent"),
+		}
 		sourceSkills := pickExistingPath(paths.skillsCandidates)
 		sourceKnowledge := pickExistingPath(paths.knowledgeCandidates)
 		sourceAgent := pickExistingPath(paths.agentCandidates)
+		repoAgent := pickExistingPath(repoAgentCandidates)
+		if repoAgent == "" {
+			repoAgent = repoAgentCandidates[0]
+		}
 
 		if sourceSkills != "" {
 			if err := copyDir(sourceSkills, repoSkills); err != nil {
@@ -249,7 +263,7 @@ func resolveToolPaths(tool string) (toolPaths, error) {
 			name:                "kiro",
 			skillsCandidates:    []string{filepath.Join(kiroHome, "skills")},
 			knowledgeCandidates: []string{filepath.Join(kiroHome, "steering"), filepath.Join(kiroHome, "knowledge")},
-			agentCandidates:     []string{filepath.Join(kiroHome, "agent")},
+			agentCandidates:     []string{filepath.Join(kiroHome, "agents"), filepath.Join(kiroHome, "agent")},
 		}, nil
 	case "claude-code":
 		claudeHome := strings.TrimSpace(os.Getenv("CLAUDE_HOME"))
