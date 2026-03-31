@@ -1,0 +1,13 @@
+global:
+  tools:
+    kiro:
+      root: /Users/jacksonxie/.kiro
+    codex:
+      root: /Users/jacksonxie/.codex
+
+projects:
+  github.com/matrixorigin/matrixflow:
+    root: /Users/jacksonxie/go/src/github.com/matrixorigin/matrixflow
+    tools:
+      kiro:
+        root: /Users/jacksonxie/go/src/github.com/matrixorigin/matrixflow/.kiro

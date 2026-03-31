@@ -13,14 +13,46 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 type toolPaths struct {
 	name                string
 	skillsCandidates    []string
 	knowledgeCandidates []string
+	learningCandidates  []string
 	agentCandidates     []string
 }
+
+type cliConfig struct {
+	Global   scopeConfig              `yaml:"global"`
+	Projects map[string]projectConfig `yaml:"projects"`
+}
+
+type scopeConfig struct {
+	Tools map[string]toolConfig `yaml:"tools"`
+}
+
+type projectConfig struct {
+	Root  string                `yaml:"root"`
+	Tools map[string]toolConfig `yaml:"tools"`
+}
+
+type toolConfig struct {
+	Root                string   `yaml:"root"`
+	SkillsCandidates    []string `yaml:"skills"`
+	KnowledgeCandidates []string `yaml:"knowledge"`
+	LearningCandidates  []string `yaml:"learning"`
+	AgentCandidates     []string `yaml:"agents"`
+}
+
+const defaultConfigFileName = ".ai-cli.yaml"
+
+const defaultConfigContent = `global:
+  tools: {}
+
+projects: {}
+`
 
 func main() {
 	if err := newRootCmd().Execute(); err != nil {
@@ -43,6 +75,8 @@ func newSkillsCmd() *cobra.Command {
 	var install bool
 	var upload bool
 	var toolsRaw string
+	var project string
+	var configPath string
 
 	cmd := &cobra.Command{
 		Use:   "skills",
@@ -57,16 +91,28 @@ func newSkillsCmd() *cobra.Command {
 				return err
 			}
 
-			if install {
-				return installTools(tools)
+			repoRoot, err := os.Getwd()
+			if err != nil {
+				return err
 			}
-			return uploadTools(tools)
+
+			cfg, err := loadConfig(repoRoot, configPath)
+			if err != nil {
+				return err
+			}
+
+			if install {
+				return installTools(repoRoot, tools, project, cfg)
+			}
+			return uploadTools(repoRoot, tools, project, cfg)
 		},
 	}
 
 	cmd.Flags().BoolVar(&install, "install", false, "Install skills/knowledge from repo to global tool dirs")
 	cmd.Flags().BoolVar(&upload, "upload", false, "Upload local global skills/knowledge to this repo")
 	cmd.Flags().StringVar(&toolsRaw, "tools", "all", "Comma separated tools: all,kiro,codex,claude-code")
+	cmd.Flags().StringVar(&project, "project", "", "Project key or absolute path for project-level tool dirs")
+	cmd.Flags().StringVar(&configPath, "config", "", "Path to config file (default: ~/.ai-cli.yaml)")
 	return cmd
 }
 
@@ -111,26 +157,23 @@ func parseTools(raw string) ([]string, error) {
 	return out, nil
 }
 
-func installTools(tools []string) error {
-	repoRoot, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
+func installTools(repoRoot string, tools []string, project string, cfg cliConfig) error {
 	for _, t := range tools {
-		paths, err := resolveToolPaths(t)
+		paths, err := resolveToolPaths(t, project, cfg)
 		if err != nil {
 			return err
 		}
 
 		repoSkills := filepath.Join(repoRoot, "skills", paths.name, "skills")
 		repoKnow := filepath.Join(repoRoot, "skills", paths.name, "knowledge")
+		repoLearning := filepath.Join(repoRoot, "skills", paths.name, "learning")
 		repoAgentCandidates := []string{
 			filepath.Join(repoRoot, "skills", paths.name, "agents"),
 			filepath.Join(repoRoot, "skills", paths.name, "agent"),
 		}
 		targetSkills := pickTargetPath(paths.skillsCandidates)
 		targetKnowledge := pickTargetPath(paths.knowledgeCandidates)
+		targetLearning := pickTargetPath(paths.learningCandidates)
 		targetAgent := pickTargetPath(paths.agentCandidates)
 		repoAgent := pickExistingPath(repoAgentCandidates)
 		if repoAgent == "" {
@@ -155,6 +198,17 @@ func installTools(tools []string) error {
 			fmt.Printf("skip %s knowledge: repo dir not found %s\n", t, repoKnow)
 		}
 
+		if len(paths.learningCandidates) > 0 {
+			if exists(repoLearning) {
+				if err := copyDir(repoLearning, targetLearning); err != nil {
+					return fmt.Errorf("install %s learning failed: %w", t, err)
+				}
+				fmt.Printf("installed %s learning: %s -> %s\n", t, repoLearning, targetLearning)
+			} else {
+				fmt.Printf("skip %s learning: repo dir not found %s\n", t, repoLearning)
+			}
+		}
+
 		if len(paths.agentCandidates) > 0 {
 			if exists(repoAgent) {
 				if err := copyDir(repoAgent, targetAgent); err != nil {
@@ -170,26 +224,23 @@ func installTools(tools []string) error {
 	return nil
 }
 
-func uploadTools(tools []string) error {
-	repoRoot, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
+func uploadTools(repoRoot string, tools []string, project string, cfg cliConfig) error {
 	for _, t := range tools {
-		paths, err := resolveToolPaths(t)
+		paths, err := resolveToolPaths(t, project, cfg)
 		if err != nil {
 			return err
 		}
 
 		repoSkills := filepath.Join(repoRoot, "skills", paths.name, "skills")
 		repoKnow := filepath.Join(repoRoot, "skills", paths.name, "knowledge")
+		repoLearning := filepath.Join(repoRoot, "skills", paths.name, "learning")
 		repoAgentCandidates := []string{
 			filepath.Join(repoRoot, "skills", paths.name, "agents"),
 			filepath.Join(repoRoot, "skills", paths.name, "agent"),
 		}
 		sourceSkills := pickExistingPath(paths.skillsCandidates)
 		sourceKnowledge := pickExistingPath(paths.knowledgeCandidates)
+		sourceLearning := pickExistingPath(paths.learningCandidates)
 		sourceAgent := pickExistingPath(paths.agentCandidates)
 		repoAgent := pickExistingPath(repoAgentCandidates)
 		if repoAgent == "" {
@@ -212,6 +263,17 @@ func uploadTools(tools []string) error {
 			fmt.Printf("uploaded %s knowledge: %s -> %s\n", t, sourceKnowledge, repoKnow)
 		} else {
 			fmt.Printf("skip %s knowledge: local dir not found (candidates: %s)\n", t, strings.Join(paths.knowledgeCandidates, ", "))
+		}
+
+		if len(paths.learningCandidates) > 0 {
+			if sourceLearning != "" {
+				if err := copyDir(sourceLearning, repoLearning); err != nil {
+					return fmt.Errorf("upload %s learning failed: %w", t, err)
+				}
+				fmt.Printf("uploaded %s learning: %s -> %s\n", t, sourceLearning, repoLearning)
+			} else {
+				fmt.Printf("skip %s learning: local dir not found (candidates: %s)\n", t, strings.Join(paths.learningCandidates, ", "))
+			}
 		}
 
 		if len(paths.agentCandidates) > 0 {
@@ -242,7 +304,14 @@ func uploadTools(tools []string) error {
 	return nil
 }
 
-func resolveToolPaths(tool string) (toolPaths, error) {
+func resolveToolPaths(tool string, project string, cfg cliConfig) (toolPaths, error) {
+	if strings.TrimSpace(project) != "" {
+		return resolveProjectToolPaths(tool, project, cfg)
+	}
+	return resolveGlobalToolPaths(tool, cfg)
+}
+
+func resolveGlobalToolPaths(tool string, cfg cliConfig) (toolPaths, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return toolPaths{}, err
@@ -251,20 +320,22 @@ func resolveToolPaths(tool string) (toolPaths, error) {
 	switch tool {
 	case "codex":
 		codexHome := getenvOrDefault("CODEX_HOME", filepath.Join(home, ".codex"))
-		return toolPaths{
+		return mergeToolConfig(toolPaths{
 			name:                "codex",
 			skillsCandidates:    []string{filepath.Join(codexHome, "skills")},
 			knowledgeCandidates: []string{filepath.Join(codexHome, "memories"), filepath.Join(codexHome, "knowledge")},
+			learningCandidates:  nil,
 			agentCandidates:     []string{filepath.Join(codexHome, "agents"), filepath.Join(codexHome, "agent")},
-		}, nil
+		}, cfg.Global.Tools["codex"]), nil
 	case "kiro":
 		kiroHome := getenvOrDefault("KIRO_HOME", filepath.Join(home, ".kiro"))
-		return toolPaths{
+		return mergeToolConfig(toolPaths{
 			name:                "kiro",
 			skillsCandidates:    []string{filepath.Join(kiroHome, "skills")},
 			knowledgeCandidates: []string{filepath.Join(kiroHome, "steering"), filepath.Join(kiroHome, "knowledge")},
+			learningCandidates:  []string{filepath.Join(kiroHome, "learning")},
 			agentCandidates:     []string{filepath.Join(kiroHome, "agents"), filepath.Join(kiroHome, "agent")},
-		}, nil
+		}, cfg.Global.Tools["kiro"]), nil
 	case "claude-code":
 		claudeHome := strings.TrimSpace(os.Getenv("CLAUDE_HOME"))
 		claudeRoots := []string{}
@@ -272,15 +343,168 @@ func resolveToolPaths(tool string) (toolPaths, error) {
 			claudeRoots = append(claudeRoots, claudeHome)
 		}
 		claudeRoots = append(claudeRoots, filepath.Join(home, ".claudecode"), filepath.Join(home, ".claude-code"), filepath.Join(home, ".claude"))
-		return toolPaths{
+		return mergeToolConfig(toolPaths{
 			name:                "claude-code",
 			skillsCandidates:    appendPaths(claudeRoots, "skills"),
 			knowledgeCandidates: appendPaths(claudeRoots, "knowledge"),
+			learningCandidates:  nil,
 			agentCandidates:     append(appendPaths(claudeRoots, "agents"), appendPaths(claudeRoots, "agent")...),
-		}, nil
+		}, cfg.Global.Tools["claude-code"]), nil
 	default:
 		return toolPaths{}, fmt.Errorf("unsupported tool %q", tool)
 	}
+}
+
+func resolveProjectToolPaths(tool string, project string, cfg cliConfig) (toolPaths, error) {
+	projectRoot, projectCfg, err := resolveProjectRoot(project, cfg)
+	if err != nil {
+		return toolPaths{}, err
+	}
+
+	switch tool {
+	case "codex":
+		defaultRoot := filepath.Join(projectRoot, ".codex")
+		return mergeToolConfig(toolPaths{
+			name:                "codex",
+			skillsCandidates:    []string{filepath.Join(defaultRoot, "skills")},
+			knowledgeCandidates: []string{filepath.Join(defaultRoot, "memories"), filepath.Join(defaultRoot, "knowledge")},
+			learningCandidates:  nil,
+			agentCandidates:     []string{filepath.Join(defaultRoot, "agents"), filepath.Join(defaultRoot, "agent")},
+		}, projectCfg.Tools["codex"]), nil
+	case "kiro":
+		defaultRoot := filepath.Join(projectRoot, ".kiro")
+		return mergeToolConfig(toolPaths{
+			name:                "kiro",
+			skillsCandidates:    []string{filepath.Join(defaultRoot, "skills")},
+			knowledgeCandidates: []string{filepath.Join(defaultRoot, "steering"), filepath.Join(defaultRoot, "knowledge")},
+			learningCandidates:  []string{filepath.Join(defaultRoot, "learning")},
+			agentCandidates:     []string{filepath.Join(defaultRoot, "agents"), filepath.Join(defaultRoot, "agent")},
+		}, projectCfg.Tools["kiro"]), nil
+	case "claude-code":
+		roots := []string{
+			filepath.Join(projectRoot, ".claudecode"),
+			filepath.Join(projectRoot, ".claude-code"),
+			filepath.Join(projectRoot, ".claude"),
+		}
+		return mergeToolConfig(toolPaths{
+			name:                "claude-code",
+			skillsCandidates:    appendPaths(roots, "skills"),
+			knowledgeCandidates: appendPaths(roots, "knowledge"),
+			learningCandidates:  nil,
+			agentCandidates:     append(appendPaths(roots, "agents"), appendPaths(roots, "agent")...),
+		}, projectCfg.Tools["claude-code"]), nil
+	default:
+		return toolPaths{}, fmt.Errorf("unsupported tool %q", tool)
+	}
+}
+
+func resolveProjectRoot(project string, cfg cliConfig) (string, projectConfig, error) {
+	project = strings.TrimSpace(project)
+	if project == "" {
+		return "", projectConfig{}, errors.New("project is empty")
+	}
+	if filepath.IsAbs(project) {
+		return project, projectConfig{Root: project}, nil
+	}
+
+	projectCfg, ok := cfg.Projects[project]
+	if !ok {
+		return "", projectConfig{}, fmt.Errorf("project %q not found in config", project)
+	}
+	root := strings.TrimSpace(projectCfg.Root)
+	if root == "" {
+		return "", projectConfig{}, fmt.Errorf("project %q has empty root in config", project)
+	}
+	return root, projectCfg, nil
+}
+
+func mergeToolConfig(base toolPaths, override toolConfig) toolPaths {
+	root := strings.TrimSpace(override.Root)
+	if root != "" {
+		switch base.name {
+		case "codex":
+			base.skillsCandidates = prependUnique(appendPaths([]string{root}, "skills"), base.skillsCandidates...)
+			base.knowledgeCandidates = prependUnique(appendPaths([]string{root}, "memories"), appendPaths([]string{root}, "knowledge")...)
+			base.agentCandidates = prependUnique(appendPaths([]string{root}, "agents"), appendPaths([]string{root}, "agent")...)
+		case "kiro":
+			base.skillsCandidates = prependUnique(appendPaths([]string{root}, "skills"), base.skillsCandidates...)
+			base.knowledgeCandidates = prependUnique(appendPaths([]string{root}, "steering"), appendPaths([]string{root}, "knowledge")...)
+			base.learningCandidates = prependUnique(appendPaths([]string{root}, "learning"), base.learningCandidates...)
+			base.agentCandidates = prependUnique(appendPaths([]string{root}, "agents"), appendPaths([]string{root}, "agent")...)
+		case "claude-code":
+			base.skillsCandidates = prependUnique(appendPaths([]string{root}, "skills"), base.skillsCandidates...)
+			base.knowledgeCandidates = prependUnique(appendPaths([]string{root}, "knowledge"), base.knowledgeCandidates...)
+			base.agentCandidates = prependUnique(appendPaths([]string{root}, "agents"), appendPaths([]string{root}, "agent")...)
+		}
+	}
+
+	base.skillsCandidates = prependUnique(override.SkillsCandidates, base.skillsCandidates...)
+	base.knowledgeCandidates = prependUnique(override.KnowledgeCandidates, base.knowledgeCandidates...)
+	base.learningCandidates = prependUnique(override.LearningCandidates, base.learningCandidates...)
+	base.agentCandidates = prependUnique(override.AgentCandidates, base.agentCandidates...)
+	return base
+}
+
+func prependUnique(paths []string, rest ...string) []string {
+	out := make([]string, 0, len(paths)+len(rest))
+	seen := make(map[string]struct{}, len(paths)+len(rest))
+	for _, group := range [][]string{paths, rest} {
+		for _, p := range group {
+			p = strings.TrimSpace(p)
+			if p == "" {
+				continue
+			}
+			if _, ok := seen[p]; ok {
+				continue
+			}
+			seen[p] = struct{}{}
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+func loadConfig(repoRoot string, configPath string) (cliConfig, error) {
+	path := strings.TrimSpace(configPath)
+	if path == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return cliConfig{}, err
+		}
+		path = filepath.Join(home, defaultConfigFileName)
+	}
+	if !exists(path) {
+		if err := ensureDefaultConfig(path); err != nil {
+			return cliConfig{}, err
+		}
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return cliConfig{}, fmt.Errorf("read config %s failed: %w", path, err)
+	}
+
+	var cfg cliConfig
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return cliConfig{}, fmt.Errorf("parse config %s failed: %w", path, err)
+	}
+	if cfg.Global.Tools == nil {
+		cfg.Global.Tools = map[string]toolConfig{}
+	}
+	if cfg.Projects == nil {
+		cfg.Projects = map[string]projectConfig{}
+	}
+	return cfg, nil
+}
+
+func ensureDefaultConfig(path string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return fmt.Errorf("create config dir %s failed: %w", filepath.Dir(path), err)
+	}
+	if err := os.WriteFile(path, []byte(defaultConfigContent), 0o644); err != nil {
+		return fmt.Errorf("create default config %s failed: %w", path, err)
+	}
+	return nil
 }
 
 func appendPaths(roots []string, suffix string) []string {
