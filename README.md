@@ -16,8 +16,8 @@ make build BINARY=bin/ci-cli
 make help
 make build
 make test
-make skills-install TOOLS=all
-make skills-upload TOOLS=codex
+make install TOOLS=all
+make upload TOOLS=codex
 ```
 
 ## Usage
