@@ -1,0 +1,4 @@
+interface:
+  display_name: "Update PR Description"
+  short_description: "Draft or update GitHub PR descriptions safely"
+  default_prompt: "Use $update-pr-desc to inspect this pull request, draft an accurate PR description, and update the PR body if I ask you to apply it."

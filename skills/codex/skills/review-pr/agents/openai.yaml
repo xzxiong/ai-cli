@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review PR"
+  short_description: "Review GitHub PRs with a structured rubric"
+  default_prompt: "Use $review-pr to inspect this GitHub pull request, gather the diff, and produce a concise evidence-backed review."
