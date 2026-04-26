@@ -34,5 +34,5 @@ go.work.sum
 # .idea/
 # .vscode/
 
-ai-cli
-ci-cli
+/ai-cli
+/ci-cli

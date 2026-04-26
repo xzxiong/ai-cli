@@ -70,14 +70,14 @@ Default local paths:
 
 - `codex`: skills at `$CODEX_HOME/skills`, knowledge at `$CODEX_HOME/memories` (fallback `$CODEX_HOME/knowledge`), agent at `$CODEX_HOME/agents` (fallback `$CODEX_HOME/agent`, default root `~/.codex`)
 - `kiro`: skills at `$KIRO_HOME/skills`, knowledge at `$KIRO_HOME/steering` (fallback `$KIRO_HOME/knowledge`), learning at `$KIRO_HOME/learning`, agent at `$KIRO_HOME/agents` (default root `~/.kiro`)
-- `claude-code`: auto-detect root from `$CLAUDE_HOME`, `~/.claudecode`, `~/.claude-code`, `~/.claude`; sync `skills`, `knowledge`, and `agents` (fallback `agent`) under that root
+- `claude-code`: auto-detect root from `$CLAUDE_HOME`, `~/.claudecode`, `~/.claude-code`, `~/.claude`; skills at `$root/commands` (fallback `$root/skills`), knowledge at `$root/knowledge`, agents at `$root/agents` (fallback `$root/agent`). The repo stores claude-code skills under `skills/claude-code/commands/` to match Claude Code's slash command layout (`~/.claude/commands/*.md`).
 
 ## Knowledge Management Notes
 
 - `codex`: knowledge is memory-oriented. On this machine, actual knowledge storage is `~/.codex/memories`; no active `~/.codex/knowledge` directory was found.
 - `kiro`: knowledge is steering-oriented. On this machine, active project knowledge is `~/.kiro/steering` (for example `project-goals.md`), not `~/.kiro/knowledge`.
 - `kiro`: `learning` is synced separately from `steering/knowledge` and is uploaded into `skills/kiro/learning`.
-- `claude-code`: this machine currently has `~/.claudecode` and `~/.claude`, but no visible `skills`/`knowledge` content yet. The CLI now tries multiple roots and picks existing paths first.
+- `claude-code`: global slash commands live at `~/.claude/commands/*.md`. The CLI maps these to `skills/claude-code/commands/` in the repo. Use `make upload TOOLS=claude-code` to sync local commands to repo, `make install TOOLS=claude-code` to sync repo commands to local.
 
 ## Config
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -8,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -157,6 +159,13 @@ func parseTools(raw string) ([]string, error) {
 	return out, nil
 }
 
+func repoSkillsDir(repoRoot, toolName string) string {
+	if toolName == "claude-code" {
+		return filepath.Join(repoRoot, "skills", toolName, "commands")
+	}
+	return filepath.Join(repoRoot, "skills", toolName, "skills")
+}
+
 func installTools(repoRoot string, tools []string, project string, cfg cliConfig) error {
 	for _, t := range tools {
 		paths, err := resolveToolPaths(t, project, cfg)
@@ -164,7 +173,7 @@ func installTools(repoRoot string, tools []string, project string, cfg cliConfig
 			return err
 		}
 
-		repoSkills := filepath.Join(repoRoot, "skills", paths.name, "skills")
+		repoSkills := repoSkillsDir(repoRoot, paths.name)
 		repoKnow := filepath.Join(repoRoot, "skills", paths.name, "knowledge")
 		repoLearning := filepath.Join(repoRoot, "skills", paths.name, "learning")
 		repoAgentCandidates := []string{
@@ -219,6 +228,16 @@ func installTools(repoRoot string, tools []string, project string, cfg cliConfig
 				fmt.Printf("skip %s agent: repo dir not found %s\n", t, repoAgent)
 			}
 		}
+
+		if t == "claude-code" && project == "" {
+			repoSettings := filepath.Join(repoRoot, "skills", "claude-code", claudeSettingsFile)
+			if exists(repoSettings) {
+				localSettings := filepath.Join(resolveClaudeHome(), "settings.json")
+				if err := mergeClaudeSettings(repoSettings, localSettings); err != nil {
+					return fmt.Errorf("install claude-code settings failed: %w", err)
+				}
+			}
+		}
 	}
 
 	return nil
@@ -231,7 +250,7 @@ func uploadTools(repoRoot string, tools []string, project string, cfg cliConfig)
 			return err
 		}
 
-		repoSkills := filepath.Join(repoRoot, "skills", paths.name, "skills")
+		repoSkills := repoSkillsDir(repoRoot, paths.name)
 		repoKnow := filepath.Join(repoRoot, "skills", paths.name, "knowledge")
 		repoLearning := filepath.Join(repoRoot, "skills", paths.name, "learning")
 		repoAgentCandidates := []string{
@@ -284,6 +303,14 @@ func uploadTools(repoRoot string, tools []string, project string, cfg cliConfig)
 				fmt.Printf("uploaded %s agent: %s -> %s\n", t, sourceAgent, repoAgent)
 			} else {
 				fmt.Printf("skip %s agent: local dir not found (candidates: %s)\n", t, strings.Join(paths.agentCandidates, ", "))
+			}
+		}
+
+		if t == "claude-code" && project == "" {
+			localSettings := filepath.Join(resolveClaudeHome(), "settings.json")
+			repoSettings := filepath.Join(repoRoot, "skills", "claude-code", claudeSettingsFile)
+			if err := extractClaudeSettings(localSettings, repoSettings); err != nil {
+				return fmt.Errorf("upload claude-code settings failed: %w", err)
 			}
 		}
 	}
@@ -345,7 +372,7 @@ func resolveGlobalToolPaths(tool string, cfg cliConfig) (toolPaths, error) {
 		claudeRoots = append(claudeRoots, filepath.Join(home, ".claudecode"), filepath.Join(home, ".claude-code"), filepath.Join(home, ".claude"))
 		return mergeToolConfig(toolPaths{
 			name:                "claude-code",
-			skillsCandidates:    appendPaths(claudeRoots, "skills"),
+			skillsCandidates:    append(appendPaths(claudeRoots, "commands"), appendPaths(claudeRoots, "skills")...),
 			knowledgeCandidates: appendPaths(claudeRoots, "knowledge"),
 			learningCandidates:  nil,
 			agentCandidates:     append(appendPaths(claudeRoots, "agents"), appendPaths(claudeRoots, "agent")...),
@@ -388,7 +415,7 @@ func resolveProjectToolPaths(tool string, project string, cfg cliConfig) (toolPa
 		}
 		return mergeToolConfig(toolPaths{
 			name:                "claude-code",
-			skillsCandidates:    appendPaths(roots, "skills"),
+			skillsCandidates:    append(appendPaths(roots, "commands"), appendPaths(roots, "skills")...),
 			knowledgeCandidates: appendPaths(roots, "knowledge"),
 			learningCandidates:  nil,
 			agentCandidates:     append(appendPaths(roots, "agents"), appendPaths(roots, "agent")...),
@@ -432,7 +459,7 @@ func mergeToolConfig(base toolPaths, override toolConfig) toolPaths {
 			base.learningCandidates = prependUnique(appendPaths([]string{root}, "learning"), base.learningCandidates...)
 			base.agentCandidates = prependUnique(appendPaths([]string{root}, "agents"), appendPaths([]string{root}, "agent")...)
 		case "claude-code":
-			base.skillsCandidates = prependUnique(appendPaths([]string{root}, "skills"), base.skillsCandidates...)
+			base.skillsCandidates = prependUnique(append(appendPaths([]string{root}, "commands"), appendPaths([]string{root}, "skills")...), base.skillsCandidates...)
 			base.knowledgeCandidates = prependUnique(appendPaths([]string{root}, "knowledge"), base.knowledgeCandidates...)
 			base.agentCandidates = prependUnique(appendPaths([]string{root}, "agents"), appendPaths([]string{root}, "agent")...)
 		}
@@ -615,6 +642,163 @@ func copyFile(src, dst string) error {
 		_ = os.Chmod(dst, info.Mode().Perm())
 	}
 	return nil
+}
+
+// claudeSettingsFile is the repo-side permissions template for Claude Code.
+const claudeSettingsFile = "settings.json"
+
+// mergeClaudeSettings merges permissions from repo settings.json into a local
+// Claude Code settings.json. Only the "permissions.allow" list is merged;
+// all other fields (model, theme, plugins, etc.) are preserved as-is.
+func mergeClaudeSettings(repoSettings, localSettings string) error {
+	repoPerms, err := readPermissions(repoSettings)
+	if err != nil {
+		return fmt.Errorf("read repo settings: %w", err)
+	}
+	if len(repoPerms) == 0 {
+		return nil
+	}
+
+	local := map[string]interface{}{}
+	if exists(localSettings) {
+		data, err := os.ReadFile(localSettings)
+		if err != nil {
+			return fmt.Errorf("read local settings: %w", err)
+		}
+		if err := json.Unmarshal(data, &local); err != nil {
+			return fmt.Errorf("parse local settings: %w", err)
+		}
+	}
+
+	localPerms := extractStringSlice(local, "permissions", "allow")
+	merged := mergeStringSlice(localPerms, repoPerms)
+
+	perms, ok := local["permissions"].(map[string]interface{})
+	if !ok {
+		perms = map[string]interface{}{}
+	}
+	perms["allow"] = merged
+	local["permissions"] = perms
+
+	if err := writeJSON(localSettings, local); err != nil {
+		return fmt.Errorf("write local settings: %w", err)
+	}
+	fmt.Printf("merged claude-code permissions: %d rules (%d from repo) -> %s\n", len(merged), len(repoPerms), localSettings)
+	return nil
+}
+
+// extractClaudeSettings extracts the permissions.allow list from a local
+// Claude Code settings.json and writes it as a standalone repo-side template.
+func extractClaudeSettings(localSettings, repoSettings string) error {
+	if !exists(localSettings) {
+		fmt.Printf("skip claude-code settings: local file not found %s\n", localSettings)
+		return nil
+	}
+
+	perms, err := readPermissions(localSettings)
+	if err != nil {
+		return fmt.Errorf("read local settings: %w", err)
+	}
+	if len(perms) == 0 {
+		fmt.Println("skip claude-code settings: no permissions.allow in local settings")
+		return nil
+	}
+
+	out := map[string]interface{}{
+		"permissions": map[string]interface{}{
+			"allow": perms,
+		},
+	}
+	if err := os.MkdirAll(filepath.Dir(repoSettings), 0o755); err != nil {
+		return err
+	}
+	if err := writeJSON(repoSettings, out); err != nil {
+		return fmt.Errorf("write repo settings: %w", err)
+	}
+	fmt.Printf("uploaded claude-code settings: %d permission rules -> %s\n", len(perms), repoSettings)
+	return nil
+}
+
+func readPermissions(path string) ([]string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var obj map[string]interface{}
+	if err := json.Unmarshal(data, &obj); err != nil {
+		return nil, err
+	}
+	return extractStringSlice(obj, "permissions", "allow"), nil
+}
+
+func extractStringSlice(obj map[string]interface{}, keys ...string) []string {
+	var cur interface{} = obj
+	for _, k := range keys {
+		m, ok := cur.(map[string]interface{})
+		if !ok {
+			return nil
+		}
+		cur = m[k]
+	}
+	arr, ok := cur.([]interface{})
+	if !ok {
+		return nil
+	}
+	out := make([]string, 0, len(arr))
+	for _, v := range arr {
+		if s, ok := v.(string); ok {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+func mergeStringSlice(base, additions []string) []string {
+	seen := make(map[string]struct{}, len(base))
+	for _, s := range base {
+		seen[s] = struct{}{}
+	}
+	merged := append([]string{}, base...)
+	for _, s := range additions {
+		if _, ok := seen[s]; !ok {
+			merged = append(merged, s)
+			seen[s] = struct{}{}
+		}
+	}
+	sort.Strings(merged)
+	return merged
+}
+
+func writeJSON(path string, v interface{}) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return err
+	}
+	data = append(data, '\n')
+	return os.WriteFile(path, data, 0o644)
+}
+
+// resolveClaudeHome returns the first existing Claude Code root directory.
+func resolveClaudeHome() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	if v := strings.TrimSpace(os.Getenv("CLAUDE_HOME")); v != "" {
+		if exists(v) {
+			return v
+		}
+	}
+	for _, name := range []string{".claudecode", ".claude-code", ".claude"} {
+		p := filepath.Join(home, name)
+		if exists(p) {
+			return p
+		}
+	}
+	return filepath.Join(home, ".claude")
 }
 
 func gitDiff(repoRoot string) error {
