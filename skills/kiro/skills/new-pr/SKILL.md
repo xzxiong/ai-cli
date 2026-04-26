@@ -1,34 +1,32 @@
 ---
-name: git-push-pr
+name: new-pr
 description: |
-  提交代码、推送分支、创建 PR 的一站式流程。自动检测仓库模式：
+  将当前修改提交到新分支并创建 PR。自动检测仓库模式：
   - fork 模式：push 到 fork remote，PR 提到 matrixorigin 上游
   - 同仓库模式：push 到 origin，在同仓库创建 PR
 
   Use this skill when:
-  - The user says "push" or "提交" followed by commit message
-  - The user invokes `/git-push-pr <commit message>`
-  - The user says "push pr" or "提交并创建pr"
-  - The user says "commit and push" or "push and create pr"
+  - The user says "new pr" or "新建 pr" or "创建 pr"
+  - The user invokes `/new-pr <commit message>`
+  - The user says "提交新 pr" or "create pr"
+  - The user wants to create a new branch from current changes and open a PR
 ---
 
-# Git Push & PR Skill
+# New PR Skill
 
 ## 目的
-一站式完成：commit → push → create PR，减少重复操作。
+从当前修改出发：创建新分支 → commit → push → 创建 PR。自动识别 fork 模式仓库。
 
 ## 使用方法
 ```bash
-kiro chat "push 修复了xxx问题"
-kiro chat "push pr feat: 新增xxx功能"
-kiro chat "提交 fix: 修复删除线检测"
+kiro chat "new pr fix: 修复xxx问题"
+kiro chat "新建 pr feat: 新增xxx功能"
+kiro chat "create pr refactor: 重构xxx"
 ```
 
 用户可在消息中覆盖：
 - `--base main` → PR 目标分支改为 main（默认 dev）
-- `--repo other-org/repo` → PR 目标仓库
-- `--remote upstream` → push 到其他 remote
-- `--no-pr` → 只 push 不创建 PR
+- `--branch <name>` → 指定新分支名（默认从 commit message 自动生成）
 - `--no-review` → 创建 PR 后跳过自动 review
 
 ## 仓库模式判定（通用 fork 检测）
@@ -69,16 +67,12 @@ git remote -v
 
 ```bash
 git rev-parse --is-inside-work-tree
-git branch --show-current
-git remote -v
+CURRENT_BRANCH=$(git branch --show-current)
 ```
-
-如果当前分支是 `dev` 或 `main`，**拒绝操作**并提示用户先创建 feature 分支。
 
 ### 2. 检测仓库模式
 
 ```bash
-# 扫描所有 remote
 FORK_REMOTE=""
 UPSTREAM_REPO=""
 
@@ -88,7 +82,6 @@ for remote in $(git remote); do
     FORK_REMOTE="$remote"
   fi
   if [[ "$url" == *"matrixorigin/"* ]]; then
-    # 提取 matrixorigin/<repo>
     UPSTREAM_REPO=$(echo "$url" | grep -oP 'matrixorigin/[^/.]+')
   fi
 done
@@ -119,34 +112,43 @@ fi
 git status --porcelain
 ```
 
-- 有未暂存的变更 → `git add -A` 然后 commit
-- 有已暂存的变更 → 直接 commit
-- 无变更但有未推送的 commit → 跳到 push
-- 完全无变更 → 提示用户
+- 有变更 → 继续
+- 无变更 → 提示用户，终止
 
-### 4. Commit
+### 4. 确定分支名
 
-从用户消息中提取 commit message。如果用户没有提供明确的 commit message，从变更内容自动生成一个简短的描述。
+如果用户通过 `--branch` 指定了分支名，使用它。否则从 commit message 自动生成：
+
+- `fix: 修复删除线检测` → `fix/修复删除线检测`
+- `feat: add export API` → `feat/add-export-API`
+
+规则：取 `<type>/<summary>`，空格替换为 `-`，截断到 50 字符。
+
+### 5. 创建新分支并 Commit
+
+如果当前在主分支（`main`/`master`/`dev`），从当前 HEAD 创建新分支：
+
+```bash
+git checkout -b <new-branch>
+git add -A
+git commit -m "<message>"
+```
+
+如果当前已在 feature 分支，直接 commit（不创建新分支）：
 
 ```bash
 git add -A
 git commit -m "<message>"
 ```
 
-### 5. Push
+### 6. Push
 
 ```bash
 # 推送到检测到的 remote（fork 模式下可能是 origin 或 xzx 等）
 git push -u $PUSH_REMOTE <branch>
 ```
 
-如果 push 被拒绝（remote 有新 commit），提示用户是否 rebase：
-```bash
-git pull --rebase $PUSH_REMOTE <branch>
-git push $PUSH_REMOTE <branch>
-```
-
-### 6. 创建 PR（除非 --no-pr）
+### 7. 创建 PR
 
 先检查是否已有 PR：
 
@@ -160,10 +162,9 @@ gh pr list --repo $PR_REPO --head xzxiong:<branch> --state open --json number,ur
 gh pr list --repo $PR_REPO --head <branch> --state open --json number,url
 ```
 
-- **已有 PR** → 输出 PR URL，不重复创建
-- **无 PR** → 创建新 PR
+已有 PR → 输出 URL，不重复创建。
 
-创建 PR：
+无 PR → 创建：
 
 **fork 模式**：
 ```bash
@@ -171,7 +172,7 @@ gh pr create \
   --repo $PR_REPO \
   --base dev \
   --head xzxiong:<branch> \
-  --title "<commit message 首行>" \
+  --title "<commit message>" \
   --body ""
 ```
 
@@ -181,45 +182,37 @@ gh pr create \
   --repo $PR_REPO \
   --base dev \
   --head <branch> \
-  --title "<commit message 首行>" \
+  --title "<commit message>" \
   --body ""
 ```
 
-### 7. 自动生成 PR 描述 + Code Review
+### 8. 自动生成 PR 描述 + Code Review
 
-PR 创建成功后（或已有 PR 时），**主代理自己**依次执行以下操作（不使用 subagent，避免权限审批问题）：
+PR 创建成功后，主代理自己依次执行：
 
-**Step 7a: 更新 PR 描述**
+**Step 8a: 更新 PR 描述**
+读取 `update-pr-desc` skill 并执行其逻辑，通过 `gh api` 更新 PR body。
 
-主代理直接执行 `update-pr-desc` skill 的逻辑：
-1. 读取 PR 元数据和 diff（已在步骤 6 中获取了 PR URL）
-2. 分析变更生成结构化描述
-3. 通过 `gh api` REST 接口更新 PR body
+**Step 8b: Code Review**（除非 `--no-review`）
+读取 `review-pr` skill 并执行其逻辑，生成审查报告并发布为 PR comment。
 
-**Step 7b: Code Review**（除非 `--no-review`）
+⚠️ 步骤 8a 和 8b 必须由主代理自己执行，不要委托给 subagent。
 
-PR 描述更新完成后，主代理直接执行 `review-pr` skill 的逻辑：
-1. 获取 PR 元数据和 diff
-2. 生成审查报告
-3. 归档到 `~/pr_review/`
-4. 发布为 PR comment
-
-⚠️ **重要**：步骤 7a 和 7b 必须由主代理自己执行（读取对应 skill 文件获取指令），**不要委托给 subagent**。subagent 没有预授权的文件读取权限，会触发交互式审批，阻塞流程。
-
-### 8. 输出结果
+### 9. 输出结果
 
 ```
+✅ Branch: <branch>
 ✅ Committed: <short sha> <message>
 ✅ Pushed: $PUSH_REMOTE (<fork-or-repo>) ← <branch>
 ✅ PR: https://github.com/$PR_REPO/pull/<number>
 ✅ PR Description: updated
-✅ Code Review: posted to PR comment
+✅ Code Review: posted
 ```
 
 ## Gotchas
 
-1. **保护分支**：`dev`、`main` 分支禁止直接 push，必须通过 PR。
+1. **主分支保护**：`main`/`master`/`dev` 禁止直接 push，必须创建新分支。
 2. **repo 名提取**：从 remote URL 中提取，支持 SSH（`git@github.com:owner/repo.git`）和 HTTPS（`https://github.com/owner/repo.git`）格式。
 3. **head 格式**：fork 模式下 `--head` 必须带 `xzxiong:` 前缀。
-4. **已有 PR**：如果当前分支已有 open PR，只 push 不重复创建。
+4. **已有 PR**：当前分支已有 open PR 时只 push 不重复创建。
 5. **fork remote 名不固定**：不同仓库的 fork remote 名可能不同（`origin`、`xzx` 等），通过 URL 内容而非 remote 名判定。
