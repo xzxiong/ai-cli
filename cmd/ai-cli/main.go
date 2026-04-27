@@ -318,10 +318,10 @@ func uploadTools(repoRoot string, tools []string, project string, cfg cliConfig)
 	if err := gitDiff(repoRoot); err != nil {
 		return err
 	}
-	if err := gitMerge(repoRoot); err != nil {
+	if err := gitCommit(repoRoot, tools); err != nil {
 		return err
 	}
-	if err := gitCommit(repoRoot, tools); err != nil {
+	if err := gitMerge(repoRoot); err != nil {
 		return err
 	}
 	if err := gitPush(repoRoot); err != nil {
