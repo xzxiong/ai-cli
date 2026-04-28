@@ -1,0 +1,4 @@
+interface:
+  display_name: "Git Switch Branch"
+  short_description: "Switch to the right Git branch safely"
+  default_prompt: "When the user says switch to [branch] {name}, find the matching branch and check it out."

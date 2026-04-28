@@ -1,108 +1,71 @@
 ---
 name: review-pr
-description: 严格版 GitHub PR 审查：证据驱动、阻断条件明确、结构化中文报告、自动归档与发布。
-metadata:
-  short-description: 严格门禁的 PR 审查与自动发布
+description: Review GitHub pull requests from a PR URL or PR number and produce a structured, evidence-backed code review. Use when the user asks to "review pr", "code review", "review #123", "审查 PR", "代码审查", or requests an exploratory/demo/PoC review. Support two modes: standard review for production-oriented changes and explore review for demos or experiments; include linked issue context only when the user explicitly asks.
 ---
 
-# Review PR (Strict)
+# Review PR
 
-用于高标准 PR 审查。要求证据充分、结论可追溯、合并建议有明确门禁。
+Review PRs with a bias toward actionable findings, concrete evidence, and the smallest set of high-signal comments.
 
-## 何时使用
+## Workflow
 
-- `review pr <url|#number>`
-- `代码审查` + PR 链接/编号
-- 需要“严格评审 / 阻断条件 / 可直接发评论”
+1. Resolve the repo and PR number from the user input.
+2. Choose review mode:
+   - Use `explore` when the user says `--explore`, "探索性 review", "demo review", or "PoC review".
+   - Otherwise use `standard`.
+3. Gather metadata with `gh pr view`.
+4. Read the diff selectively with `gh pr diff`.
+5. If the repo exists locally, fetch the PR branch or compare base/head locally to inspect surrounding context, touched call sites, and tests.
+6. If the user explicitly asks for linked-issue context, fetch the linked issue and relevant comments.
+7. Review against the checklist in `references/checklists.md`.
+8. Return only evidence-backed findings, ordered by severity and user impact.
 
-## 强制规则（MUST）
+## Gather Context
 
-- 必须基于实际 diff 与上下文给结论，不允许猜测。
-- 每条问题必须包含：`文件`、`行号`、`风险`、`修复建议`。
-- 结论必须分级：🔴 阻断合并 / 🟡 建议修改 / 🟢 可选优化。
-- 发现高风险但证据不足时，必须标注“需补充信息”，不能直接判定通过。
-- 未覆盖的关键检查项必须在报告中显式写“未验证 + 原因”。
+Use `gh` first because it gives a fast summary of the PR:
 
-## 执行流程
+```bash
+gh pr view <PR> --json number,title,body,author,baseRefName,headRefName,additions,deletions,changedFiles,files,commits,labels
+gh pr diff <PR>
+```
 
-1. 获取 PR 元数据
-- `gh pr view <PR_NUMBER> --repo <OWNER/REPO> --json number,title,body,author,files,commits,additions,deletions,baseRefName,headRefName,labels,state,url`
+Prefer local repository context when available:
+- Check whether the current directory or a nearby directory is the target repo.
+- If available, inspect the full changed files, not just the diff hunk.
+- Read neighboring code, tests, configs, and interfaces that the diff depends on.
+- Skip generated, vendored, or lock files unless they hide a real behavioral change.
 
-2. 获取并分段阅读 diff
-- `gh pr diff <PR_NUMBER> --repo <OWNER/REPO> | grep -n '^diff --git'`
-- 按关键文件分段读取；优先 `handler/service/repo/model/test`
-- 跳过生成文件（`swagger.json`、`docs.go` 等），但需在报告中注明已跳过
+Fetch linked issue context only when the user explicitly requests it, for example with `--with-issue` or "关联 Issue 一起看".
 
-3. 可选关联 Issue（仅用户要求）
-- `gh issue view <ISSUE_NUMBER> --repo <OWNER/REPO> --json title,body`
-- `gh api repos/<OWNER>/<REPO>/issues/<ISSUE_NUMBER>/comments --jq '.[].body'`
+## Review Rules
 
-4. 输出严格审查报告（中文）
-- 顺序固定：
-  - PR 基础信息
-  - TL;DR（问题计数 + 合并结论）
-  - PR 描述质量（背景/原因/方案/结果）
-  - 变更概述
-  - 方案评审（UT/BVT/Eval）
-  - 逐文件审查
-  - API/配置/Schema 变更清单（如有）
-  - 风险总表与阻断项
+- Prefer correctness, regressions, and hidden operational risk over style nitpicks.
+- Do not invent problems; every finding should point to a concrete file, behavior, or missing safeguard.
+- Explain why the issue matters, when it triggers, and how to fix or de-risk it.
+- Call out missing tests when the change adds meaningful behavior or risk.
+- If the diff is too large to inspect exhaustively, say what you sampled and where uncertainty remains.
+- If there are no material issues, say so clearly and mention what you checked.
 
-5. 归档
-- `~/pr_review/<repo>_PR<number>_<title>_<YYYYMMDD>.md`
-- 同名先备份为 `_bakNNN.md` 再写入
+## Output Shape
 
-6. 折叠历史审查评论（当前用户）
-- 仅折叠：当前登录用户（`viewer.login`）+ 未折叠 + 内容匹配审查报告特征
-- 覆盖两类评论：`pullRequest.comments`（普通评论）+ `reviewThreads.comments`（行内 review comments）
-- GraphQL `minimizeComment` with `OUTDATED`
-- 折叠后必须二次校验剩余匹配评论数；若非 0，报告中注明“折叠未完全成功 + 剩余数量”
-- 严禁折叠其他用户评论（即使内容匹配）
-- 其他用户评论若匹配审查特征，可在新报告中引用其评论链接与要点摘要，但不得执行折叠
+Use a compact structure:
+1. One-line summary of the PR.
+2. `Findings` section with only high-signal issues.
+3. `Open Questions` only when something cannot be verified from the code.
+4. `Notes` for non-blocking observations, missing tests, or good changes worth highlighting.
 
-7. 发布评论
-- `gh pr comment <PR_NUMBER> --repo <OWNER/REPO> --body-file <REPORT_PATH>`
+For each finding, include:
+- severity
+- file or symbol
+- triggering scenario
+- impact
+- concrete suggestion
 
-## 严格检查清单（必须逐项判定）
+## Optional Actions
 
-- 正确性：边界条件、空值、错误路径、状态机转换
-- 兼容性：API 字段/语义变化、配置默认值变化、迁移成本
-- 并发安全：竞态、死锁、goroutine/channel 泄漏
-- 性能：N+1、热点循环、无界内存增长、慢查询风险
-- 安全：输入校验、注入风险、权限绕过、敏感信息泄露
-- 可维护性：重复逻辑、过度耦合、不可测试设计
-- 测试充分性：是否覆盖 happy/error/boundary/regression
-- LLM 相关（如适用）：幻觉风险、输出约束、token 成本
+If the user asks for a review comment, draft it in Markdown first.
+Only post with `gh pr comment` after the user explicitly asks to publish it.
 
-## 阻断合并规则（Gate）
+## Reference
 
-满足任一条件即“🔴 不建议合并”：
-- 存在可复现功能错误或明确回归风险
-- 存在 breaking change 且无迁移方案
-- 存在高危安全问题（注入、鉴权缺失、数据泄露）
-- 关键路径缺少必要测试且无法证明风险可接受
-- 关键结论依赖未提供证据（日志、用例、代码上下文）
-
-## 输出格式（强约束）
-
-- 每条问题模板：
-  - `文件: <path>`
-  - `行号: <line>`
-  - `级别: 🔴/🟡/🟢`
-  - `问题: <具体风险>`
-  - `证据: <diff/逻辑依据>`
-  - `建议: <可执行修复>`
-- 交叉引用：
-  - 问题项：`<a id="issue-N"></a>`
-  - 引用处：`[🔴 #N](#issue-N)`
-
-## 合并结论模板（必须二选一）
-
-- `结论：🔴 不建议合并（需修复后复审）`
-- `结论：✅ 可合并（仅存在非阻断建议）`
-
-## 注意事项
-
-- 大 PR 必须分段读取，禁止一次性吞全部 diff。
-- 上下文不足时先补充取数，再给结论。
-- 私有仓库必须优先 `gh` CLI。
+Use `references/checklists.md` for mode-specific review priorities and report heuristics.
