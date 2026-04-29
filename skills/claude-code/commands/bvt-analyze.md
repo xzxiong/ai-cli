@@ -1,4 +1,4 @@
-Analyze BVT test failures from GitHub Actions CI logs.
+Analyze BVT test failures from GitHub Actions CI logs, then create issue with analysis.
 
 Input: $ARGUMENTS (GitHub Actions run URL or job URL)
 
@@ -22,7 +22,7 @@ Input: $ARGUMENTS (GitHub Actions run URL or job URL)
        --jq '.[] | select(.annotation_level=="failure") | {path, start_line, message, title}'
    ```
 
-3. **Tier 2: Failed step logs**
+3. **Tier 2: Failed step logs** (if Tier 1 insufficient)
    ```bash
    timeout 1800 gh run view <run-id> --repo matrixorigin/matrixflow --log-failed > /tmp/bvt-<run-id>/ci-logs.txt
    grep -B 50 -A 50 -E "(FAILED|ERROR|AssertionError|Exception|Traceback)" ci-logs.txt | head -200
@@ -46,9 +46,18 @@ Input: $ARGUMENTS (GitHub Actions run URL or job URL)
    | 8000 | local-service | local-service.log |
    | 50051 | mowl.scheduler | mowl.log |
 
-6. Output structured analysis report:
-   - Failed tests with error messages and types
-   - Root cause analysis
-   - Suggested investigation steps
+6. **Auto-create BVT Issue**:
+   ```bash
+   gh issue create --repo matrixorigin/matrixflow \
+     --title "[MOI BUG]: <first-failed-test> - <error-summary>" \
+     --label "kind/bug-moi,kind/bug,bvt-tag-issue" --assignee xzxiong \
+     --body "<failure-details>"
+   ```
+
+7. **Post analysis as comment**:
+   - Create zip of critical logs: `zip -r /tmp/bvt-issue-<run-id>.zip *.log`
+   - Upload to Gist: `gh gist create --public --desc "BVT Issue #<number>" <files...>`
+   - Comment with: critical error timeline, top 50 error lines, root cause, artifact download instructions
+   - Truncate comment to 60KB
 
 Temp files in `/tmp/bvt-<run-id>/`, clean up after completion.

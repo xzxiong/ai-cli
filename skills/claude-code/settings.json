@@ -1,9 +1,6 @@
 {
   "permissions": {
     "allow": [
-      "Read(/tmp/**)",
-      "Write(/tmp/**)",
-      "Edit(/tmp/**)",
       "Bash(awk *)",
       "Bash(cp *)",
       "Bash(curl *)",
@@ -64,7 +61,10 @@
       "Bash(uniq *)",
       "Bash(unzip *)",
       "Bash(wc *)",
-      "Bash(zip *)"
+      "Bash(zip *)",
+      "Edit(/tmp/**)",
+      "Read(/tmp/**)",
+      "Write(/tmp/**)"
     ]
   }
 }

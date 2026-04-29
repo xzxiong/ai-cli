@@ -9,8 +9,10 @@ Input: $ARGUMENTS (测试名或测试命令)
 | moi-core 集成测试 | `go test . -run {Test} -v -timeout 120s -count=1` | `moi-core/tests` |
 | moi-core workers | `go test ./... -run {Test} -v -timeout 60s -count=1` | `moi-core/workers/go-worker` |
 | moi-core catalog | `go test ./... -run {Test} -v -timeout 60s -count=1` | `moi-core/catalog` |
+| moi-core SDK | `go test ./... -run {Test} -v -timeout 60s -count=1` | `moi-core/go-sdk` |
 | Go 服务 | `go test ./... -run {Test} -v -timeout 60s -count=1` | `{service_dir}` |
 | Python | `poetry run pytest {path} -v --tb=long` | `{service_dir}/src` |
+| .NET | `dotnet test --filter {Test} -v` | `openxml_service` |
 
 ## 迭代循环
 
@@ -56,3 +58,4 @@ Input: $ARGUMENTS (测试名或测试命令)
 - 集成测试需要 MatrixOne(6001)、MinIO(9100)、OpenXML(8817)
 - 必须使用 Go 1.24.x（1.25+ 导致 sonic 编译失败）
 - 新 FAIL 出现时回滚上一轮修改
+- 静态检查标准：moi-core `go vet` + `staticcheck` 零警告；传统服务 `gofmt` + `golangci-lint`；Python `ruff check`

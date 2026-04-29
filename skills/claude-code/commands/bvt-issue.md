@@ -37,6 +37,7 @@ Input: $ARGUMENTS (bug description with optional CI URL, OR "reanalyze #<number>
 
 **Tier 1: gh API (fast, ~5s)**
 - Run metadata, failed jobs with step details, check run annotations
+- Annotations provide: full assertion/error message, test file path, test name, annotation level
 
 **Tier 2: Failed step logs (~30s)**
 - `timeout 1800 gh run view <run-id> --repo matrixorigin/matrixflow --log-failed`
@@ -52,12 +53,16 @@ Input: $ARGUMENTS (bug description with optional CI URL, OR "reanalyze #<number>
   | 6001 | mo | matrixflow-mo.log |
   | 50051/50052 | mowl | mowl.log |
 
+**Decision logic**: Tier 1 annotations sufficient → compose comment, skip Tier 2/3. Annotations empty → Tier 2. Logs empty/timeout → Tier 3. Always download artifacts in parallel for full picture.
+
+**Port-to-Service targeted analysis**: Extract port from error messages (e.g., `127.0.0.1:8910: connection reset`) → map to service → prioritize that service's log → grep for errors ±2 minutes of failure.
+
 **Upload & Comment**:
 ```bash
 gh gist create --public --desc "BVT Issue #<number> - CI logs for run <run-id>" <files...>
 gh issue comment <number> --repo matrixorigin/matrixflow --body "<analysis>"
 ```
 
-Comment structure: Run info → Failed Jobs & Steps → Test Failure Annotations → Suspected Service → CI Step Log Errors → Pytest Log Summary → Service Log Errors. Truncate to 60KB.
+Comment structure: Run info → Failed Jobs & Steps → Test Failure Annotations → Suspected Service (port mapping) → CI Step Log Errors → Pytest Log Summary → Service Log Errors. Truncate to 60KB.
 
 Temp files in `/tmp/bvt-analysis-<run-id>/`, clean up after posting.
