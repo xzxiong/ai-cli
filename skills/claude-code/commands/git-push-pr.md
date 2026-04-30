@@ -1,6 +1,6 @@
 一站式完成：commit → push → create PR → update PR desc → code review。
 
-Input: $ARGUMENTS (commit message, 可选 flags: --base main, --no-pr, --no-review)
+Input: $ARGUMENTS (commit message, 可选 flags: --base <branch>, --no-pr, --no-review)
 
 ## 仓库模式判定
 
@@ -8,6 +8,14 @@ Input: $ARGUMENTS (commit message, 可选 flags: --base main, --no-pr, --no-revi
 - 存在 `xzxiong/<repo>` 和 `matrixorigin/<repo>` 两个 remote → **fork 模式**（push 到 xzxiong remote，PR 到 matrixorigin）
 - 否则 → **同仓库模式**（push 到 origin）
 - 白名单走同仓库模式：matrixone-operator
+
+**仓库默认 base 分支**（用户 `--base` 参数可覆盖）：
+
+| 仓库 | 默认 base 分支 |
+|------|---------------|
+| `matrixflow` | `dev` |
+| `moi-frontend` | `dev` |
+| 其他 | `main`（若存在 `master` 则用 `master`） |
 
 ## 流程
 
@@ -34,9 +42,9 @@ git push -u $PUSH_REMOTE <branch>
 - fork: `gh pr list --repo $PR_REPO --head xzxiong:<branch> --state open --json number,url`
 - 同仓库: `gh pr list --repo $PR_REPO --head <branch> --state open --json number,url`
 
-已有 → 输出 URL，不重复创建。无 PR → 创建：
-- fork: `gh pr create --repo $PR_REPO --base dev --head xzxiong:<branch> --title "<msg>" --body ""`
-- 同仓库: `gh pr create --repo $PR_REPO --base dev --head <branch> --title "<msg>" --body ""`
+已有 → 输出 URL，不重复创建。无 PR → 创建（`$BASE_BRANCH` 由仓库名自动确定，matrixflow=dev，其他=main）：
+- fork: `gh pr create --repo $PR_REPO --base $BASE_BRANCH --head xzxiong:<branch> --title "<msg>" --body ""`
+- 同仓库: `gh pr create --repo $PR_REPO --base $BASE_BRANCH --head <branch> --title "<msg>" --body ""`
 
 ### 5. 更新 PR 描述
 按 `/update-pr-desc` skill 的逻辑：获取 diff → 分析变更 → 生成结构化描述 → `gh api repos/.../pulls/<number> -X PATCH -F "body=@/tmp/pr-body.md"`

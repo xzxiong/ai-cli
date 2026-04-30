@@ -1,6 +1,6 @@
 从当前修改出发：创建新分支 → commit → push → 创建 PR → 更新描述 → code review。
 
-Input: $ARGUMENTS (commit message, 可选: --base main, --branch <name>, --no-review)
+Input: $ARGUMENTS (commit message, 可选: --base <branch>, --branch <name>, --no-review)
 
 ## 仓库模式判定（通用 fork 检测）
 
@@ -24,6 +24,16 @@ git remote -v
 
 **已知同仓库模式白名单**（即使存在 fork remote 也走同仓库模式）：
 - matrixone-operator
+
+**仓库默认 base 分支**（不同仓库主分支不同）：
+
+| 仓库 | 默认 base 分支 |
+|------|---------------|
+| `matrixflow` | `dev` |
+| `moi-frontend` | `dev` |
+| 其他 | `main`（若存在 `master` 则用 `master`） |
+
+用户通过 `--base` 参数可覆盖。
 
 ## 流程
 
@@ -67,6 +77,21 @@ else
   MODE="same-repo"
   PUSH_REMOTE="origin"
   PR_REPO=$(git remote get-url origin | grep -oP '[^/:]+/[^/.]+$')
+fi
+
+# 确定默认 base 分支（用户 --base 参数优先）
+if [[ -z "$BASE_BRANCH" ]]; then
+  case "$REPO_NAME" in
+    matrixflow|moi-frontend) BASE_BRANCH="dev" ;;
+    *)
+      # 检测远端是否有 main 或 master
+      if git ls-remote --heads "$PUSH_REMOTE" main 2>/dev/null | grep -q main; then
+        BASE_BRANCH="main"
+      else
+        BASE_BRANCH="master"
+      fi
+      ;;
+  esac
 fi
 ```
 
@@ -118,7 +143,7 @@ gh pr list --repo $PR_REPO --head <branch> --state open --json number,url
 ```bash
 gh pr create \
   --repo $PR_REPO \
-  --base ${BASE_BRANCH:-main} \
+  --base $BASE_BRANCH \
   --head xzxiong:<branch> \
   --title "<commit message>" \
   --body ""
@@ -128,7 +153,7 @@ gh pr create \
 ```bash
 gh pr create \
   --repo $PR_REPO \
-  --base ${BASE_BRANCH:-main} \
+  --base $BASE_BRANCH \
   --head <branch> \
   --title "<commit message>" \
   --body ""
@@ -137,8 +162,8 @@ gh pr create \
 ### 7. 更新 PR 描述
 PR 创建成功后，通过 `gh api` 更新 PR body：
 
-1. 读取 commit history: `git log upstream/main..HEAD` (或 `origin/main..HEAD`)
-2. 分析代码变更: `git diff upstream/main...HEAD`
+1. 读取 commit history: `git log upstream/$BASE_BRANCH..HEAD` (或 `origin/$BASE_BRANCH..HEAD`)
+2. 分析代码变更: `git diff upstream/$BASE_BRANCH...HEAD`
 3. 生成结构化描述：
    - Summary: 简要概述（1-2 句话）
    - 功能特性/变更内容
