@@ -863,7 +863,7 @@ func installClaudePlugins(repoRoot string) error {
 			continue
 		}
 		dst := filepath.Join(localPluginsDir, name)
-		if err := mergePluginRegistryFile(src, dst, localCacheDir); err != nil {
+		if err := mergePluginRegistryFile(src, dst, localCacheDir, localPluginsDir); err != nil {
 			return fmt.Errorf("merge %s: %w", name, err)
 		}
 		fmt.Printf("installed claude-code plugin registry: %s -> %s\n", src, dst)
@@ -879,44 +879,58 @@ func copyFileWithPathNormalize(src, dst, localCacheDir, placeholder string) erro
 		return err
 	}
 	normalized := strings.ReplaceAll(string(data), localCacheDir+"/", placeholder)
+
+	var obj map[string]interface{}
+	if err := json.Unmarshal([]byte(normalized), &obj); err == nil {
+		normalizeInstallLocationsForUpload(obj)
+		if normalized_data, err := json.MarshalIndent(obj, "", "  "); err == nil {
+			normalized = string(normalized_data) + "\n"
+		}
+	}
+
 	return os.WriteFile(dst, []byte(normalized), 0o644)
 }
 
-func mergePluginRegistryFile(src, dst, localCacheDir string) error {
+func mergePluginRegistryFile(src, dst, localCacheDir, localPluginsDir string) error {
 	srcData, err := os.ReadFile(src)
 	if err != nil {
 		return err
 	}
-	expanded := strings.ReplaceAll(string(srcData), portableCachePrefix, localCacheDir+"/")
 
 	var srcObj map[string]interface{}
-	if err := json.Unmarshal([]byte(expanded), &srcObj); err == nil {
-		normalizePluginInstallLocations(srcObj, localCacheDir)
-		if data, err := json.MarshalIndent(srcObj, "", "  "); err == nil {
-			expanded = string(data) + "\n"
+	if err := json.Unmarshal([]byte(srcData), &srcObj); err == nil {
+		expandInstallLocations(srcObj, localPluginsDir)
+		expandCachePaths(srcObj, localCacheDir)
+		if normalized_data, err := json.MarshalIndent(srcObj, "", "  "); err == nil {
+			srcData = []byte(string(normalized_data) + "\n")
 		}
 	}
 
 	if !exists(dst) {
-		return os.WriteFile(dst, []byte(expanded), 0o644)
+		return os.WriteFile(dst, srcData, 0o644)
 	}
 
 	var dstObj map[string]interface{}
-	if err := json.Unmarshal([]byte(expanded), &srcObj); err != nil {
-		return os.WriteFile(dst, []byte(expanded), 0o644)
+	if err := json.Unmarshal(srcData, &srcObj); err != nil {
+		return os.WriteFile(dst, srcData, 0o644)
 	}
 
 	dstData, err := os.ReadFile(dst)
 	if err != nil {
-		return os.WriteFile(dst, []byte(expanded), 0o644)
+		return os.WriteFile(dst, srcData, 0o644)
 	}
 	if err := json.Unmarshal(dstData, &dstObj); err != nil {
-		return os.WriteFile(dst, []byte(expanded), 0o644)
+		return os.WriteFile(dst, srcData, 0o644)
 	}
 
 	mergeMap(dstObj, srcObj)
-	normalizePluginInstallLocations(dstObj, localCacheDir)
 	return writeJSON(dst, dstObj)
+}
+
+func expandCachePaths(obj map[string]interface{}, localCacheDir string) {
+	jsonStr, _ := json.Marshal(obj)
+	expanded := strings.ReplaceAll(string(jsonStr), portableCachePrefix, localCacheDir+"/")
+	json.Unmarshal([]byte(expanded), &obj)
 }
 
 func mergeMap(dst, src map[string]interface{}) {
@@ -936,26 +950,39 @@ func mergeMap(dst, src map[string]interface{}) {
 	}
 }
 
-func normalizePluginInstallLocations(obj map[string]interface{}, pluginsDir string) {
+func expandInstallLocations(obj map[string]interface{}, localPluginsDir string) {
 	for _, val := range obj {
 		if m, ok := val.(map[string]interface{}); ok {
 			if loc, ok := m["installLocation"].(string); ok && loc != "" {
-				rel := normalizeInstallLocation(loc, pluginsDir)
-				m["installLocation"] = rel
+				m["installLocation"] = expandInstallLocation(loc, localPluginsDir)
 			}
 		}
 	}
 }
 
-func normalizeInstallLocation(absPath, pluginsDir string) string {
+func expandInstallLocation(placeholderPath, localPluginsDir string) string {
+	if strings.HasPrefix(placeholderPath, portableCachePrefix) {
+		rel := strings.TrimPrefix(placeholderPath, portableCachePrefix)
+		return filepath.Join(localPluginsDir, rel)
+	}
+	return placeholderPath
+}
+
+func normalizeInstallLocationsForUpload(obj map[string]interface{}) {
+	for _, val := range obj {
+		if m, ok := val.(map[string]interface{}); ok {
+			if loc, ok := m["installLocation"].(string); ok && loc != "" {
+				m["installLocation"] = normalizeInstallLocationForUpload(loc)
+			}
+		}
+	}
+}
+
+func normalizeInstallLocationForUpload(absPath string) string {
 	const marketplacesKey = "/.claude/plugins/marketplaces/"
 	if idx := strings.Index(absPath, marketplacesKey); idx >= 0 {
 		rel := absPath[idx+len(marketplacesKey):]
 		return filepath.Join(portableCachePrefix, "marketplaces", rel)
-	}
-	basePath := filepath.Join(pluginsDir, "marketplaces")
-	if strings.HasPrefix(absPath, basePath) {
-		return filepath.Join(portableCachePrefix, "marketplaces", strings.TrimPrefix(absPath, basePath+"/"))
 	}
 	return absPath
 }
