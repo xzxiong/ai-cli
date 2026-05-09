@@ -817,13 +817,14 @@ func uploadClaudePlugins(repoRoot string) error {
 		return err
 	}
 
+	cacheDir := filepath.Join(localPluginsDir, "cache")
 	for _, name := range claudePluginFiles {
 		src := filepath.Join(localPluginsDir, name)
 		if !exists(src) {
 			continue
 		}
 		dst := filepath.Join(repoPluginsDir, name)
-		if err := copyFile(src, dst); err != nil {
+		if err := copyFileWithPathNormalize(src, dst, cacheDir, portableCachePrefix); err != nil {
 			return fmt.Errorf("copy %s: %w", name, err)
 		}
 		fmt.Printf("uploaded claude-code plugin registry: %s -> %s\n", src, dst)
@@ -844,13 +845,14 @@ func installClaudePlugins(repoRoot string) error {
 		return err
 	}
 
+	localCacheDir := filepath.Join(localPluginsDir, "cache")
 	for _, name := range claudePluginFiles {
 		src := filepath.Join(repoPluginsDir, name)
 		if !exists(src) {
 			continue
 		}
 		dst := filepath.Join(localPluginsDir, name)
-		if err := mergePluginRegistryFile(src, dst); err != nil {
+		if err := mergePluginRegistryFile(src, dst, localCacheDir); err != nil {
 			return fmt.Errorf("merge %s: %w", name, err)
 		}
 		fmt.Printf("installed claude-code plugin registry: %s -> %s\n", src, dst)
@@ -858,27 +860,39 @@ func installClaudePlugins(repoRoot string) error {
 	return nil
 }
 
-func mergePluginRegistryFile(src, dst string) error {
+const portableCachePrefix = "${PLUGINS_CACHE}/"
+
+func copyFileWithPathNormalize(src, dst, localCacheDir, placeholder string) error {
+	data, err := os.ReadFile(src)
+	if err != nil {
+		return err
+	}
+	normalized := strings.ReplaceAll(string(data), localCacheDir+"/", placeholder)
+	return os.WriteFile(dst, []byte(normalized), 0o644)
+}
+
+func mergePluginRegistryFile(src, dst, localCacheDir string) error {
 	srcData, err := os.ReadFile(src)
 	if err != nil {
 		return err
 	}
+	expanded := strings.ReplaceAll(string(srcData), portableCachePrefix, localCacheDir+"/")
 
 	if !exists(dst) {
-		return os.WriteFile(dst, srcData, 0o644)
+		return os.WriteFile(dst, []byte(expanded), 0o644)
 	}
 
 	var srcObj, dstObj map[string]interface{}
-	if err := json.Unmarshal(srcData, &srcObj); err != nil {
-		return os.WriteFile(dst, srcData, 0o644)
+	if err := json.Unmarshal([]byte(expanded), &srcObj); err != nil {
+		return os.WriteFile(dst, []byte(expanded), 0o644)
 	}
 
 	dstData, err := os.ReadFile(dst)
 	if err != nil {
-		return os.WriteFile(dst, srcData, 0o644)
+		return os.WriteFile(dst, []byte(expanded), 0o644)
 	}
 	if err := json.Unmarshal(dstData, &dstObj); err != nil {
-		return os.WriteFile(dst, srcData, 0o644)
+		return os.WriteFile(dst, []byte(expanded), 0o644)
 	}
 
 	mergeMap(dstObj, srcObj)
