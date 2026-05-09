@@ -4,7 +4,7 @@
     "code-review@claude-plugins-official": [
       {
         "scope": "user",
-        "installPath": "/data2/xzxiong/.claude/plugins/cache/claude-plugins-official/code-review/unknown",
+        "installPath": "${PLUGINS_CACHE}/claude-plugins-official/code-review/unknown",
         "version": "unknown",
         "installedAt": "2026-04-25T13:08:18.713Z",
         "lastUpdated": "2026-04-25T13:08:18.713Z"
@@ -13,7 +13,7 @@
     "github@claude-plugins-official": [
       {
         "scope": "user",
-        "installPath": "/data2/xzxiong/.claude/plugins/cache/claude-plugins-official/github/unknown",
+        "installPath": "${PLUGINS_CACHE}/claude-plugins-official/github/unknown",
         "version": "unknown",
         "installedAt": "2026-04-25T13:08:30.059Z",
         "lastUpdated": "2026-04-25T13:08:30.059Z"
@@ -22,7 +22,7 @@
     "skill-creator@claude-plugins-official": [
       {
         "scope": "user",
-        "installPath": "/data2/xzxiong/.claude/plugins/cache/claude-plugins-official/skill-creator/unknown",
+        "installPath": "${PLUGINS_CACHE}/claude-plugins-official/skill-creator/unknown",
         "version": "unknown",
         "installedAt": "2026-04-25T13:09:20.287Z",
         "lastUpdated": "2026-04-25T13:09:20.287Z"
@@ -31,7 +31,7 @@
     "pr-review-toolkit@claude-plugins-official": [
       {
         "scope": "user",
-        "installPath": "/data2/xzxiong/.claude/plugins/cache/claude-plugins-official/pr-review-toolkit/unknown",
+        "installPath": "${PLUGINS_CACHE}/claude-plugins-official/pr-review-toolkit/unknown",
         "version": "unknown",
         "installedAt": "2026-04-25T13:09:39.388Z",
         "lastUpdated": "2026-04-25T13:09:39.388Z"
@@ -40,7 +40,7 @@
     "andrej-karpathy-skills@karpathy-skills": [
       {
         "scope": "user",
-        "installPath": "/data2/xzxiong/.claude/plugins/cache/karpathy-skills/andrej-karpathy-skills/1.0.0",
+        "installPath": "${PLUGINS_CACHE}/karpathy-skills/andrej-karpathy-skills/1.0.0",
         "version": "1.0.0",
         "installedAt": "2026-05-09T03:21:29.199Z",
         "lastUpdated": "2026-05-09T03:21:29.199Z",
