@@ -248,7 +248,11 @@ func installTools(repoRoot string, tools []string, project string, cfg cliConfig
 		if t == "claude-code" && project == "" {
 			repoSettings := filepath.Join(repoRoot, "skills", "claude-code", claudeSettingsFile)
 			if exists(repoSettings) {
-				localSettings := filepath.Join(resolveClaudeHome(), "settings.json")
+				home, err := os.UserHomeDir()
+				if err != nil {
+					return fmt.Errorf("get home dir: %w", err)
+				}
+				localSettings := filepath.Join(home, ".claude", "settings.json")
 				if err := mergeClaudeSettings(repoSettings, localSettings); err != nil {
 					return fmt.Errorf("install claude-code settings failed: %w", err)
 				}
@@ -340,7 +344,11 @@ func uploadTools(repoRoot string, tools []string, project string, cfg cliConfig)
 		}
 
 		if t == "claude-code" && project == "" {
-			localSettings := filepath.Join(resolveClaudeHome(), "settings.json")
+			home, err := os.UserHomeDir()
+			if err != nil {
+				return fmt.Errorf("get home dir: %w", err)
+			}
+			localSettings := filepath.Join(home, ".claude", "settings.json")
 			repoSettings := filepath.Join(repoRoot, "skills", "claude-code", claudeSettingsFile)
 			if err := extractClaudeSettings(localSettings, repoSettings); err != nil {
 				return fmt.Errorf("upload claude-code settings failed: %w", err)
@@ -406,7 +414,7 @@ func resolveGlobalToolPaths(tool string, cfg cliConfig) (toolPaths, error) {
 		if claudeHome != "" {
 			claudeRoots = append(claudeRoots, claudeHome)
 		}
-		claudeRoots = append(claudeRoots, filepath.Join(home, ".claudecode"), filepath.Join(home, ".claude-code"), filepath.Join(home, ".claude"))
+		claudeRoots = append(claudeRoots, filepath.Join(home, ".claude"), filepath.Join(home, ".claude-code"), filepath.Join(home, ".claudecode"))
 		return mergeToolConfig(toolPaths{
 			name:                 "claude-code",
 			commandsCandidates:   appendPaths(claudeRoots, "commands"),
@@ -447,9 +455,9 @@ func resolveProjectToolPaths(tool string, project string, cfg cliConfig) (toolPa
 		}, projectCfg.Tools["kiro"]), nil
 	case "claude-code":
 		roots := []string{
-			filepath.Join(projectRoot, ".claudecode"),
-			filepath.Join(projectRoot, ".claude-code"),
 			filepath.Join(projectRoot, ".claude"),
+			filepath.Join(projectRoot, ".claude-code"),
+			filepath.Join(projectRoot, ".claudecode"),
 		}
 		return mergeToolConfig(toolPaths{
 			name:                 "claude-code",
@@ -599,9 +607,6 @@ func pickExistingPath(paths []string) string {
 }
 
 func pickTargetPath(paths []string) string {
-	if p := pickExistingPath(paths); p != "" {
-		return p
-	}
 	if len(paths) > 0 {
 		return paths[0]
 	}
@@ -805,8 +810,11 @@ const claudePluginsDir = "plugins"
 var claudePluginFiles = []string{"installed_plugins.json", "known_marketplaces.json"}
 
 func uploadClaudePlugins(repoRoot string) error {
-	claudeHome := resolveClaudeHome()
-	localPluginsDir := filepath.Join(claudeHome, claudePluginsDir)
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	localPluginsDir := filepath.Join(home, ".claude", claudePluginsDir)
 	if !exists(localPluginsDir) {
 		fmt.Printf("skip claude-code plugins: local dir not found %s\n", localPluginsDir)
 		return nil
@@ -839,8 +847,11 @@ func installClaudePlugins(repoRoot string) error {
 		return nil
 	}
 
-	claudeHome := resolveClaudeHome()
-	localPluginsDir := filepath.Join(claudeHome, claudePluginsDir)
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	localPluginsDir := filepath.Join(home, ".claude", claudePluginsDir)
 	if err := os.MkdirAll(localPluginsDir, 0o755); err != nil {
 		return err
 	}
