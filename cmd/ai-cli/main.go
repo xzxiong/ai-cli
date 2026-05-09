@@ -889,11 +889,19 @@ func mergePluginRegistryFile(src, dst, localCacheDir string) error {
 	}
 	expanded := strings.ReplaceAll(string(srcData), portableCachePrefix, localCacheDir+"/")
 
+	var srcObj map[string]interface{}
+	if err := json.Unmarshal([]byte(expanded), &srcObj); err == nil {
+		normalizePluginInstallLocations(srcObj, localCacheDir)
+		if data, err := json.MarshalIndent(srcObj, "", "  "); err == nil {
+			expanded = string(data) + "\n"
+		}
+	}
+
 	if !exists(dst) {
 		return os.WriteFile(dst, []byte(expanded), 0o644)
 	}
 
-	var srcObj, dstObj map[string]interface{}
+	var dstObj map[string]interface{}
 	if err := json.Unmarshal([]byte(expanded), &srcObj); err != nil {
 		return os.WriteFile(dst, []byte(expanded), 0o644)
 	}
@@ -907,6 +915,7 @@ func mergePluginRegistryFile(src, dst, localCacheDir string) error {
 	}
 
 	mergeMap(dstObj, srcObj)
+	normalizePluginInstallLocations(dstObj, localCacheDir)
 	return writeJSON(dst, dstObj)
 }
 
@@ -925,6 +934,30 @@ func mergeMap(dst, src map[string]interface{}) {
 			dst[k] = srcVal
 		}
 	}
+}
+
+func normalizePluginInstallLocations(obj map[string]interface{}, pluginsDir string) {
+	for _, val := range obj {
+		if m, ok := val.(map[string]interface{}); ok {
+			if loc, ok := m["installLocation"].(string); ok && loc != "" {
+				rel := normalizeInstallLocation(loc, pluginsDir)
+				m["installLocation"] = rel
+			}
+		}
+	}
+}
+
+func normalizeInstallLocation(absPath, pluginsDir string) string {
+	const marketplacesKey = "/.claude/plugins/marketplaces/"
+	if idx := strings.Index(absPath, marketplacesKey); idx >= 0 {
+		rel := absPath[idx+len(marketplacesKey):]
+		return filepath.Join(portableCachePrefix, "marketplaces", rel)
+	}
+	basePath := filepath.Join(pluginsDir, "marketplaces")
+	if strings.HasPrefix(absPath, basePath) {
+		return filepath.Join(portableCachePrefix, "marketplaces", strings.TrimPrefix(absPath, basePath+"/"))
+	}
+	return absPath
 }
 
 func readPermissions(path string) ([]string, error) {

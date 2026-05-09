@@ -1,18 +1,18 @@
 {
   "claude-plugins-official": {
+    "installLocation": "${PLUGINS_CACHE}/marketplaces/claude-plugins-official",
+    "lastUpdated": "2026-05-09T03:27:34.204Z",
     "source": {
-      "source": "github",
-      "repo": "anthropics/claude-plugins-official"
-    },
-    "installLocation": "/data2/xzxiong/.claude/plugins/marketplaces/claude-plugins-official",
-    "lastUpdated": "2026-05-09T03:27:34.204Z"
+      "repo": "anthropics/claude-plugins-official",
+      "source": "github"
+    }
   },
   "karpathy-skills": {
+    "installLocation": "${PLUGINS_CACHE}/marketplaces/karpathy-skills",
+    "lastUpdated": "2026-05-09T03:21:08.499Z",
     "source": {
-      "source": "github",
-      "repo": "forrestchang/andrej-karpathy-skills"
-    },
-    "installLocation": "/data2/xzxiong/.claude/plugins/marketplaces/karpathy-skills",
-    "lastUpdated": "2026-05-09T03:21:08.499Z"
+      "repo": "forrestchang/andrej-karpathy-skills",
+      "source": "github"
+    }
   }
 }

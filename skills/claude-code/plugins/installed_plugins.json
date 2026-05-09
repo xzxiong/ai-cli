@@ -1,51 +1,60 @@
 {
-  "version": 2,
   "plugins": {
+    "andrej-karpathy-skills@karpathy-skills": [
+      {
+        "gitCommitSha": "2c606141936f1eeef17fa3043a72095b4765b9c2",
+        "installPath": "${PLUGINS_CACHE}/karpathy-skills/andrej-karpathy-skills/1.0.0",
+        "installedAt": "2026-05-09T03:21:29.199Z",
+        "lastUpdated": "2026-05-09T03:21:29.199Z",
+        "scope": "user",
+        "version": "1.0.0"
+      }
+    ],
     "code-review@claude-plugins-official": [
       {
-        "scope": "user",
         "installPath": "${PLUGINS_CACHE}/claude-plugins-official/code-review/unknown",
-        "version": "unknown",
         "installedAt": "2026-04-25T13:08:18.713Z",
-        "lastUpdated": "2026-04-25T13:08:18.713Z"
+        "lastUpdated": "2026-04-25T13:08:18.713Z",
+        "scope": "user",
+        "version": "unknown"
       }
     ],
     "github@claude-plugins-official": [
       {
-        "scope": "user",
         "installPath": "${PLUGINS_CACHE}/claude-plugins-official/github/unknown",
-        "version": "unknown",
         "installedAt": "2026-04-25T13:08:30.059Z",
-        "lastUpdated": "2026-04-25T13:08:30.059Z"
+        "lastUpdated": "2026-04-25T13:08:30.059Z",
+        "scope": "user",
+        "version": "unknown"
       }
     ],
-    "skill-creator@claude-plugins-official": [
+    "gopls-lsp@claude-plugins-official": [
       {
+        "installPath": "${PLUGINS_CACHE}/claude-plugins-official/gopls-lsp/1.0.0",
+        "installedAt": "2026-05-09T07:31:48.294Z",
+        "lastUpdated": "2026-05-09T07:31:48.294Z",
         "scope": "user",
-        "installPath": "${PLUGINS_CACHE}/claude-plugins-official/skill-creator/unknown",
-        "version": "unknown",
-        "installedAt": "2026-04-25T13:09:20.287Z",
-        "lastUpdated": "2026-04-25T13:09:20.287Z"
+        "version": "1.0.0"
       }
     ],
     "pr-review-toolkit@claude-plugins-official": [
       {
-        "scope": "user",
         "installPath": "${PLUGINS_CACHE}/claude-plugins-official/pr-review-toolkit/unknown",
-        "version": "unknown",
         "installedAt": "2026-04-25T13:09:39.388Z",
-        "lastUpdated": "2026-04-25T13:09:39.388Z"
+        "lastUpdated": "2026-04-25T13:09:39.388Z",
+        "scope": "user",
+        "version": "unknown"
       }
     ],
-    "andrej-karpathy-skills@karpathy-skills": [
+    "skill-creator@claude-plugins-official": [
       {
+        "installPath": "${PLUGINS_CACHE}/claude-plugins-official/skill-creator/unknown",
+        "installedAt": "2026-04-25T13:09:20.287Z",
+        "lastUpdated": "2026-04-25T13:09:20.287Z",
         "scope": "user",
-        "installPath": "${PLUGINS_CACHE}/karpathy-skills/andrej-karpathy-skills/1.0.0",
-        "version": "1.0.0",
-        "installedAt": "2026-05-09T03:21:29.199Z",
-        "lastUpdated": "2026-05-09T03:21:29.199Z",
-        "gitCommitSha": "2c606141936f1eeef17fa3043a72095b4765b9c2"
+        "version": "unknown"
       }
     ]
-  }
+  },
+  "version": 2
 }
