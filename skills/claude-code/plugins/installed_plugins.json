@@ -1,0 +1,51 @@
+{
+  "version": 2,
+  "plugins": {
+    "code-review@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/data2/xzxiong/.claude/plugins/cache/claude-plugins-official/code-review/unknown",
+        "version": "unknown",
+        "installedAt": "2026-04-25T13:08:18.713Z",
+        "lastUpdated": "2026-04-25T13:08:18.713Z"
+      }
+    ],
+    "github@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/data2/xzxiong/.claude/plugins/cache/claude-plugins-official/github/unknown",
+        "version": "unknown",
+        "installedAt": "2026-04-25T13:08:30.059Z",
+        "lastUpdated": "2026-04-25T13:08:30.059Z"
+      }
+    ],
+    "skill-creator@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/data2/xzxiong/.claude/plugins/cache/claude-plugins-official/skill-creator/unknown",
+        "version": "unknown",
+        "installedAt": "2026-04-25T13:09:20.287Z",
+        "lastUpdated": "2026-04-25T13:09:20.287Z"
+      }
+    ],
+    "pr-review-toolkit@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/data2/xzxiong/.claude/plugins/cache/claude-plugins-official/pr-review-toolkit/unknown",
+        "version": "unknown",
+        "installedAt": "2026-04-25T13:09:39.388Z",
+        "lastUpdated": "2026-04-25T13:09:39.388Z"
+      }
+    ],
+    "andrej-karpathy-skills@karpathy-skills": [
+      {
+        "scope": "user",
+        "installPath": "/data2/xzxiong/.claude/plugins/cache/karpathy-skills/andrej-karpathy-skills/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2026-05-09T03:21:29.199Z",
+        "lastUpdated": "2026-05-09T03:21:29.199Z",
+        "gitCommitSha": "2c606141936f1eeef17fa3043a72095b4765b9c2"
+      }
+    ]
+  }
+}

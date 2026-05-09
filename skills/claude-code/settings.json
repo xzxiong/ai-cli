@@ -1,4 +1,19 @@
 {
+  "enabledPlugins": {
+    "andrej-karpathy-skills@karpathy-skills": true,
+    "code-review@claude-plugins-official": true,
+    "github@claude-plugins-official": true,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "karpathy-skills": {
+      "source": {
+        "repo": "forrestchang/andrej-karpathy-skills",
+        "source": "github"
+      }
+    }
+  },
   "permissions": {
     "allow": [
       "Bash(awk *)",
