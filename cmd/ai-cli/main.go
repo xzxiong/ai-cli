@@ -253,6 +253,10 @@ func installTools(repoRoot string, tools []string, project string, cfg cliConfig
 					return fmt.Errorf("install claude-code settings failed: %w", err)
 				}
 			}
+
+			if err := installClaudePlugins(repoRoot); err != nil {
+				return fmt.Errorf("install claude-code plugins failed: %w", err)
+			}
 		}
 	}
 
@@ -340,6 +344,10 @@ func uploadTools(repoRoot string, tools []string, project string, cfg cliConfig)
 			repoSettings := filepath.Join(repoRoot, "skills", "claude-code", claudeSettingsFile)
 			if err := extractClaudeSettings(localSettings, repoSettings); err != nil {
 				return fmt.Errorf("upload claude-code settings failed: %w", err)
+			}
+
+			if err := uploadClaudePlugins(repoRoot); err != nil {
+				return fmt.Errorf("upload claude-code plugins failed: %w", err)
 			}
 		}
 	}
@@ -680,16 +688,16 @@ func copyFile(src, dst string) error {
 // claudeSettingsFile is the repo-side permissions template for Claude Code.
 const claudeSettingsFile = "settings.json"
 
-// mergeClaudeSettings merges permissions from repo settings.json into a local
-// Claude Code settings.json. Only the "permissions.allow" list is merged;
-// all other fields (model, theme, plugins, etc.) are preserved as-is.
+// mergeClaudeSettings merges permissions, enabledPlugins, and extraKnownMarketplaces
+// from repo settings.json into a local Claude Code settings.json.
 func mergeClaudeSettings(repoSettings, localSettings string) error {
-	repoPerms, err := readPermissions(repoSettings)
+	repoData, err := os.ReadFile(repoSettings)
 	if err != nil {
 		return fmt.Errorf("read repo settings: %w", err)
 	}
-	if len(repoPerms) == 0 {
-		return nil
+	var repo map[string]interface{}
+	if err := json.Unmarshal(repoData, &repo); err != nil {
+		return fmt.Errorf("parse repo settings: %w", err)
 	}
 
 	local := map[string]interface{}{}
@@ -703,53 +711,195 @@ func mergeClaudeSettings(repoSettings, localSettings string) error {
 		}
 	}
 
-	localPerms := extractStringSlice(local, "permissions", "allow")
-	merged := mergeStringSlice(localPerms, repoPerms)
-
-	perms, ok := local["permissions"].(map[string]interface{})
-	if !ok {
-		perms = map[string]interface{}{}
+	repoPerms := extractStringSlice(repo, "permissions", "allow")
+	if len(repoPerms) > 0 {
+		localPerms := extractStringSlice(local, "permissions", "allow")
+		merged := mergeStringSlice(localPerms, repoPerms)
+		perms, ok := local["permissions"].(map[string]interface{})
+		if !ok {
+			perms = map[string]interface{}{}
+		}
+		perms["allow"] = merged
+		local["permissions"] = perms
+		fmt.Printf("merged claude-code permissions: %d rules (%d from repo) -> %s\n", len(merged), len(repoPerms), localSettings)
 	}
-	perms["allow"] = merged
-	local["permissions"] = perms
+
+	if repoPlugins, ok := repo["enabledPlugins"].(map[string]interface{}); ok {
+		localPlugins, _ := local["enabledPlugins"].(map[string]interface{})
+		if localPlugins == nil {
+			localPlugins = map[string]interface{}{}
+		}
+		for k, v := range repoPlugins {
+			localPlugins[k] = v
+		}
+		local["enabledPlugins"] = localPlugins
+		fmt.Printf("merged claude-code plugins: %d entries -> %s\n", len(localPlugins), localSettings)
+	}
+
+	if repoMarkets, ok := repo["extraKnownMarketplaces"].(map[string]interface{}); ok {
+		localMarkets, _ := local["extraKnownMarketplaces"].(map[string]interface{})
+		if localMarkets == nil {
+			localMarkets = map[string]interface{}{}
+		}
+		for k, v := range repoMarkets {
+			localMarkets[k] = v
+		}
+		local["extraKnownMarketplaces"] = localMarkets
+		fmt.Printf("merged claude-code marketplaces: %d entries -> %s\n", len(localMarkets), localSettings)
+	}
 
 	if err := writeJSON(localSettings, local); err != nil {
 		return fmt.Errorf("write local settings: %w", err)
 	}
-	fmt.Printf("merged claude-code permissions: %d rules (%d from repo) -> %s\n", len(merged), len(repoPerms), localSettings)
 	return nil
 }
 
-// extractClaudeSettings extracts the permissions.allow list from a local
-// Claude Code settings.json and writes it as a standalone repo-side template.
+// extractClaudeSettings extracts the permissions.allow, enabledPlugins, and
+// extraKnownMarketplaces from a local Claude Code settings.json into a repo-side template.
 func extractClaudeSettings(localSettings, repoSettings string) error {
 	if !exists(localSettings) {
 		fmt.Printf("skip claude-code settings: local file not found %s\n", localSettings)
 		return nil
 	}
 
-	perms, err := readPermissions(localSettings)
+	data, err := os.ReadFile(localSettings)
 	if err != nil {
 		return fmt.Errorf("read local settings: %w", err)
 	}
-	if len(perms) == 0 {
-		fmt.Println("skip claude-code settings: no permissions.allow in local settings")
+	var local map[string]interface{}
+	if err := json.Unmarshal(data, &local); err != nil {
+		return fmt.Errorf("parse local settings: %w", err)
+	}
+
+	out := map[string]interface{}{}
+
+	perms := extractStringSlice(local, "permissions", "allow")
+	if len(perms) > 0 {
+		out["permissions"] = map[string]interface{}{"allow": perms}
+	}
+
+	if plugins, ok := local["enabledPlugins"]; ok {
+		out["enabledPlugins"] = plugins
+	}
+	if markets, ok := local["extraKnownMarketplaces"]; ok {
+		out["extraKnownMarketplaces"] = markets
+	}
+
+	if len(out) == 0 {
+		fmt.Println("skip claude-code settings: nothing to extract")
 		return nil
 	}
 
-	out := map[string]interface{}{
-		"permissions": map[string]interface{}{
-			"allow": perms,
-		},
-	}
 	if err := os.MkdirAll(filepath.Dir(repoSettings), 0o755); err != nil {
 		return err
 	}
 	if err := writeJSON(repoSettings, out); err != nil {
 		return fmt.Errorf("write repo settings: %w", err)
 	}
-	fmt.Printf("uploaded claude-code settings: %d permission rules -> %s\n", len(perms), repoSettings)
+	fmt.Printf("uploaded claude-code settings: %d fields -> %s\n", len(out), repoSettings)
 	return nil
+}
+
+const claudePluginsDir = "plugins"
+
+var claudePluginFiles = []string{"installed_plugins.json", "known_marketplaces.json"}
+
+func uploadClaudePlugins(repoRoot string) error {
+	claudeHome := resolveClaudeHome()
+	localPluginsDir := filepath.Join(claudeHome, claudePluginsDir)
+	if !exists(localPluginsDir) {
+		fmt.Printf("skip claude-code plugins: local dir not found %s\n", localPluginsDir)
+		return nil
+	}
+
+	repoPluginsDir := filepath.Join(repoRoot, "skills", "claude-code", claudePluginsDir)
+	if err := os.MkdirAll(repoPluginsDir, 0o755); err != nil {
+		return err
+	}
+
+	for _, name := range claudePluginFiles {
+		src := filepath.Join(localPluginsDir, name)
+		if !exists(src) {
+			continue
+		}
+		dst := filepath.Join(repoPluginsDir, name)
+		if err := copyFile(src, dst); err != nil {
+			return fmt.Errorf("copy %s: %w", name, err)
+		}
+		fmt.Printf("uploaded claude-code plugin registry: %s -> %s\n", src, dst)
+	}
+	return nil
+}
+
+func installClaudePlugins(repoRoot string) error {
+	repoPluginsDir := filepath.Join(repoRoot, "skills", "claude-code", claudePluginsDir)
+	if !exists(repoPluginsDir) {
+		fmt.Printf("skip claude-code plugins: repo dir not found %s\n", repoPluginsDir)
+		return nil
+	}
+
+	claudeHome := resolveClaudeHome()
+	localPluginsDir := filepath.Join(claudeHome, claudePluginsDir)
+	if err := os.MkdirAll(localPluginsDir, 0o755); err != nil {
+		return err
+	}
+
+	for _, name := range claudePluginFiles {
+		src := filepath.Join(repoPluginsDir, name)
+		if !exists(src) {
+			continue
+		}
+		dst := filepath.Join(localPluginsDir, name)
+		if err := mergePluginRegistryFile(src, dst); err != nil {
+			return fmt.Errorf("merge %s: %w", name, err)
+		}
+		fmt.Printf("installed claude-code plugin registry: %s -> %s\n", src, dst)
+	}
+	return nil
+}
+
+func mergePluginRegistryFile(src, dst string) error {
+	srcData, err := os.ReadFile(src)
+	if err != nil {
+		return err
+	}
+
+	if !exists(dst) {
+		return os.WriteFile(dst, srcData, 0o644)
+	}
+
+	var srcObj, dstObj map[string]interface{}
+	if err := json.Unmarshal(srcData, &srcObj); err != nil {
+		return os.WriteFile(dst, srcData, 0o644)
+	}
+
+	dstData, err := os.ReadFile(dst)
+	if err != nil {
+		return os.WriteFile(dst, srcData, 0o644)
+	}
+	if err := json.Unmarshal(dstData, &dstObj); err != nil {
+		return os.WriteFile(dst, srcData, 0o644)
+	}
+
+	mergeMap(dstObj, srcObj)
+	return writeJSON(dst, dstObj)
+}
+
+func mergeMap(dst, src map[string]interface{}) {
+	for k, srcVal := range src {
+		dstVal, exists := dst[k]
+		if !exists {
+			dst[k] = srcVal
+			continue
+		}
+		srcMap, srcOk := srcVal.(map[string]interface{})
+		dstMap, dstOk := dstVal.(map[string]interface{})
+		if srcOk && dstOk {
+			mergeMap(dstMap, srcMap)
+		} else {
+			dst[k] = srcVal
+		}
+	}
 }
 
 func readPermissions(path string) ([]string, error) {
@@ -864,7 +1014,7 @@ func gitMerge(repoRoot string) error {
 
 func gitCommit(repoRoot string, tools []string) error {
 	fmt.Println("running git commit...")
-	if err := runGit(repoRoot, "add", "skills"); err != nil {
+	if err := runGit(repoRoot, "add", "skills/"); err != nil {
 		return err
 	}
 

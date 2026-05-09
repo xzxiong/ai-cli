@@ -6,7 +6,12 @@
       "Bash(GOCACHE=/tmp/gocache go run ./cmd/ai-cli skills --upload --tools claude-code)",
       "Bash(GOCACHE=/tmp/gocache go run *)",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('model:', d.get\\('model'\\)\\); print\\('theme:', d.get\\('theme'\\)\\); print\\('effortLevel:', d.get\\('effortLevel'\\)\\); print\\('plugins:', list\\(d.get\\('enabledPlugins',{}\\).keys\\(\\)\\)\\); print\\('permissions:', len\\(d.get\\('permissions',{}\\).get\\('allow',[]\\)\\)\\)\")",
-      "Bash(GOCACHE=/tmp/gocache go build *)"
+      "Bash(GOCACHE=/tmp/gocache go build *)",
+      "mcp__memoria__memory_retrieve"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "memoria"
+  ]
 }
