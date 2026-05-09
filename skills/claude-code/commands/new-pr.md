@@ -1,4 +1,4 @@
-从当前修改出发：创建新分支 → commit → push → 创建 PR → 更新描述 → code review。
+从当前修改出发：创建新分支 → commit → push → 创建 PR → 更新描述 → code review。Trigger on: "new pr", "开 pr", "提 pr", "create pr", "open pr", "submit pr", "提交 pr", "pr 一下", "推个 pr", "发 pr", or any request to create/open a pull request from current local changes.
 
 Input: $ARGUMENTS (commit message, 可选: --base <branch>, --branch <name>, --no-review)
 
