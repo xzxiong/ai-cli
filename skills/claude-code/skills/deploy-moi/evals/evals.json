@@ -1,0 +1,23 @@
+{
+  "skill_name": "local-deploy-matrixflow",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I just cloned matrixflow locally and need to get the development environment up and running. Can you walk me through the full setup including database initialization, service startup, and a quick health check?",
+      "expected_output": "Skill should orchestrate all 6 stages: diagnostics → infra → db/mq → backend → frontend → verify. Output includes service status dashboard and browser link.",
+      "assertions": []
+    },
+    {
+      "id": 2,
+      "prompt": "My apiserver and job-consumer services failed to start. The logs show Python poetry issues. How do I debug and fix this?",
+      "expected_output": "Skill should diagnose Stage 4 issues, suggest checking workflow_be poetry setup, show how to inspect tmp/apiserver.log and tmp/job-consumer.log, and guide through retry.",
+      "assertions": []
+    },
+    {
+      "id": 3,
+      "prompt": "After deployment, I want to test the end-to-end flow: authenticate, get an API key, and verify a document can be parsed with genai-cli. Walk me through it.",
+      "expected_output": "Skill should guide Stage 6 verification: login → extract token → get API key → update genai-cli.yaml → run sample pipeline → verify MinIO bucket.",
+      "assertions": []
+    }
+  ]
+}
