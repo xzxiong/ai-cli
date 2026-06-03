@@ -1,7 +1,7 @@
 {
   "claude-plugins-official": {
     "installLocation": "${PLUGINS_CACHE}/marketplaces/claude-plugins-official",
-    "lastUpdated": "2026-05-26T11:36:56.484Z",
+    "lastUpdated": "2026-06-03T07:42:02.712Z",
     "source": {
       "repo": "anthropics/claude-plugins-official",
       "source": "github"
