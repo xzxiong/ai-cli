@@ -1,23 +1,29 @@
 ---
 name: merge-main
 description: |
-  合并目标分支（默认 main）到当前分支，全面解决 merge conflict。
+  合并目标分支到当前分支，全面解决 merge conflict。
+  自动检测默认分支：MatrixFlow/moi- 系列仓库默认合并 dev，其他仓库默认合并 main。
   不仅解决文本冲突，还会追踪所有受影响的调用链、单元测试、E2E 测试、
   外围工具适配（CI/CD、Dockerfile、scripts 等），确保合并后代码可编译、可通过测试。
 
   Use this skill when:
   - The user says "merge main", "合并 main", "merge latest main"
+  - The user says "merge dev", "合并 dev"
   - The user says "resolve conflicts", "解决冲突"
   - The user asks to update their branch with upstream changes
 
 triggers:
   - "merge main"
   - "merge latest main"
+  - "merge dev"
   - "合并 main"
+  - "合并 dev"
   - "resolve conflicts"
   - "解决冲突"
   - "update from main"
+  - "update from dev"
   - "rebase main"
+  - "rebase dev"
 ---
 
 # Merge Main — 全面合并与冲突解决
@@ -26,7 +32,24 @@ triggers:
 
 ## Input
 
-`<branch>` (默认 `main`)，可选 flag：`--rebase`（使用 rebase 而非 merge）
+`<branch>` (可选，自动检测默认分支)，可选 flag：`--rebase`（使用 rebase 而非 merge）
+
+## 默认分支检测
+
+根据仓库自动选择目标分支：
+
+| 仓库 / remote 特征 | 默认目标分支 |
+|---|---|
+| `matrixflow` / `moi-` 系列仓库 (remote URL 含 `matrixflow` 或 `moi-`) | `dev` |
+| 其他仓库 | `main` |
+
+检测逻辑（Step 1 中执行）：
+```bash
+# 通过 remote URL 判断是否为 MatrixFlow 系列仓库
+git remote -v | grep -qiE '(matrixflow|/moi-)' && echo "dev" || echo "main"
+```
+
+用户显式指定 `<branch>` 时，跳过自动检测。
 
 ## 核心原则
 
@@ -38,12 +61,15 @@ triggers:
 
 ## 执行流程
 
-### Step 1. 预检查
+### Step 1. 预检查 & 分支检测
 
 ```bash
 git status --porcelain          # 确保工作区干净
 git branch --show-current       # 记录当前分支
 git stash list                  # 如有未提交修改，提示用户先 stash 或 commit
+
+# 自动检测目标分支（如用户未指定）
+TARGET_BRANCH=$(git remote -v | grep -qiE '(matrixflow|/moi-)' && echo "dev" || echo "main")
 ```
 
 如果工作区不干净，提示用户处理后再执行。

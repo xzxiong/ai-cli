@@ -39,6 +39,16 @@
         "version": "1.0.0"
       }
     ],
+    "minimax-skills@minimax-skills": [
+      {
+        "gitCommitSha": "60aaae52bb2af8162732751a4332f62a5fef518b",
+        "installPath": "${PLUGINS_CACHE}/minimax-skills/minimax-skills/1.0.0",
+        "installedAt": "2026-06-04T11:13:07.796Z",
+        "lastUpdated": "2026-06-04T11:13:07.796Z",
+        "scope": "user",
+        "version": "1.0.0"
+      }
+    ],
     "pr-review-toolkit@claude-plugins-official": [
       {
         "gitCommitSha": "6cc16f4b16e80893695da60b8b82a236be9f9546",

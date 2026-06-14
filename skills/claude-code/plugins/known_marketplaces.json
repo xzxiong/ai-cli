@@ -1,7 +1,7 @@
 {
   "claude-plugins-official": {
     "installLocation": "${PLUGINS_CACHE}/marketplaces/claude-plugins-official",
-    "lastUpdated": "2026-06-03T07:42:02.712Z",
+    "lastUpdated": "2026-06-14T09:34:28.613Z",
     "source": {
       "repo": "anthropics/claude-plugins-official",
       "source": "github"
@@ -13,6 +13,14 @@
     "source": {
       "repo": "forrestchang/andrej-karpathy-skills",
       "source": "github"
+    }
+  },
+  "minimax-skills": {
+    "installLocation": "${PLUGINS_CACHE}/marketplaces/minimax-skills",
+    "lastUpdated": "2026-06-04T11:13:04.935Z",
+    "source": {
+      "source": "git",
+      "url": "https://github.com/MiniMax-AI/skills.git"
     }
   }
 }

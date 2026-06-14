@@ -4,6 +4,7 @@
     "code-review@claude-plugins-official": true,
     "github@claude-plugins-official": true,
     "gopls-lsp@claude-plugins-official": true,
+    "minimax-skills@minimax-skills": true,
     "pr-review-toolkit@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true
   },
@@ -12,6 +13,12 @@
       "source": {
         "repo": "forrestchang/andrej-karpathy-skills",
         "source": "github"
+      }
+    },
+    "minimax-skills": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/MiniMax-AI/skills.git"
       }
     }
   },

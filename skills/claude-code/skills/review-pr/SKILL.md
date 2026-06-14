@@ -11,7 +11,7 @@ description: |
   - The user invokes `/review-pr <PR_URL>` or `/review-pr #<number>`
   - The user says "review"、"代码审查"、"看下这个 PR" with a PR URL or number
   - The user says "review pr --explore" or "探索性review" for exploratory/demo PRs
-  - The user says "review pr --ops" or PR is from ops/gitops/moi-gitops/moi-op repos
+  - The user says "review pr --ops" or PR is from ops/gitops/moi-gitops/moi-op/ob-ops repos
 ---
 
 # Review PR
@@ -26,8 +26,24 @@ description: |
 
 1. `--explore` → 探索模式
 2. `--ops` → Ops 模式
-3. PR 来自 `ops`/`gitops`/`moi-gitops`/`moi-op` 仓库 → Ops 模式（自动识别）
+3. PR 来自 `ops`/`gitops`/`moi-gitops`/`moi-op`/`ob-ops` 仓库 → Ops 模式（自动识别）
 4. 否则 → **标准模式**
+
+## 深度开关（标准模式内）
+
+标准模式下，根据 PR 特征自动决定 2.2/2.3 章节是否展开：
+
+- **2.2 架构评审**：当满足以下任一条件时展开（否则标「不适用」跳过）
+  - 新增 ≥3 个源码文件
+  - 大量代码从一个文件移动到多个文件（deletions 占比 > 40% 且有对应新增文件）
+  - PR 标题/描述含 refactor / restructure / 重构 / 拆分
+  - 涉及类型定义文件的新增或大幅重写
+
+- **2.3 存量适配影响**：当满足以下任一条件时展开（否则标「不适用」跳过）
+  - 有导出函数/类型被删除或签名变更
+  - 有 JSON struct tag 的字段删除/重命名
+  - 有 form/template/config 的 field_id 或 key 变更
+  - PR 描述提及「向后兼容」「存量」「迁移」或 deletions > 500
 
 ## 执行流程
 
@@ -46,19 +62,35 @@ gh pr diff <number> --repo <OWNER/REPO> 2>&1 | sed -n '<START>,<END>p'
 
 **读取优先级**：业务逻辑（handler/service/processor） > schema/model > 配置 > 测试 > 文档
 
-### Step 2. 获取关联 Issue（仅 `--with-issue` 时）
+### Step 2. 提取设计文档
 
-从 PR body/commit message 提取 issue 编号：
+**始终执行**。从以下位置搜索设计文档/方案描述（按优先级）：
+
+1. **PR body**：查找「设计文档」「方案」「设计」「design」链接或内联描述
+2. **关联 Issue**：从 PR body / commit message 提取 issue 编号，获取 issue body + comments
+3. **PR comment**：查看是否有作者补充的方案说明 comment
+
 ```bash
+# 从 PR body 提取 issue 编号（匹配 #123、fixes #123、closes #123、issue链接等）
+# 如发现 issue 编号：
 gh issue view <number> --repo <OWNER/REPO> --json title,body
 gh api repos/<OWNER>/<REPO>/issues/<number>/comments --jq '.[].body'
+
+# 检查 PR comments 是否有设计补充
+gh api repos/<OWNER>/<REPO>/issues/<number>/comments --jq '.[] | select(.author_association == "MEMBER" or .author_association == "OWNER") | .body' | head -50
 ```
+
+**结果处理**：
+- 找到设计文档 → 后续方案评审时对照设计文档验证实现是否一致，偏差处标注
+- 未找到 → 在报告「一、PR 描述评审」中输出 `⚠️ 未找到设计文档/方案描述`，提醒作者补充，但继续 review（基于代码本身推断意图）
 
 ### Step 3. 确定模式，Read 对应 checklist
 
 根据模式判断结果，Read 对应的详细 checklist 文件作为审查指引：
 
-- **标准模式** → Read `~/.claude/skills/review-pr/references/standard-checklist.md`
+- **标准模式** → Read `~/.claude/skills/review-pr/references/standard-checklist.md`（骨架）
+  - 始终 Read：`section-testing.md`、`section-risks.md`
+  - 条件触发 Read：`section-architecture.md`（满足深度开关条件时）
 - **探索模式** → Read `~/.claude/skills/review-pr/references/explore-checklist.md`
 - **Ops 模式** → Read `~/.claude/skills/review-pr/references/ops-checklist.md`
 
