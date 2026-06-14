@@ -213,10 +213,12 @@ A → B ──→ D     ← 移除 C 对 B 的依赖
 每条包含：
 ```
 <a id="issue-N"></a>
-**🔴/🟡/🟢 #N** — `<file_path>` L<line>
+**🔴/🟡/🟢 I-N** — `<file_path>` L<line>
 问题：<description>
 建议：<suggestion / code example>
 ```
+
+> ⚠️ 使用 `I-N` 编号（如 `I-1`），**不要**使用 `#N`。GitHub 会将 `#数字` 自动解析为 issue/PR 链接。
 
 ---
 

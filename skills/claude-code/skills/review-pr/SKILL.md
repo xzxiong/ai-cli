@@ -96,7 +96,9 @@ gh api repos/<OWNER>/<REPO>/issues/<number>/comments --jq '.[] | select(.author_
 
 ### Step 4. 生成审查报告
 
-按 checklist 中的报告模板逐章生成。每条 issue 用 `<a id="issue-N"></a>` 锚点，引用处用 `[🔴 #N](#issue-N)` 链接。
+按 checklist 中的报告模板逐章生成。每条 issue 用 `<a id="issue-N"></a>` 锚点，引用处用 `[🔴 I-N](#issue-N)` 链接。
+
+**⚠️ 编号格式**：使用 `I-N`（如 `I-1`、`I-2`）而非 `#N`。GitHub 会将 `#数字` 解析为 issue/PR 链接，导致错误关联。
 
 代码审查分级：
 - 🔴 必须修改（bug/严重问题）
