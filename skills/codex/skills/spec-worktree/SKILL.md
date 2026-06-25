@@ -20,7 +20,7 @@ Create a spec-backed Git worktree for isolated implementation.
 4. Fetch origin and create or validate the branch.
 5. Create a Git worktree at `worktree/<branch>` unless overridden.
 6. Ensure `worktree/` is ignored where appropriate.
-7. Copy the spec files into the worktree.
+7. Copy `requirements.md`, `design.md`, `tasks.md`, and `.config.kiro` when present into the worktree's `.kiro/specs/<feature-name>/`.
 8. Open the worktree in the IDE unless `--no-ide` is set.
 9. Report spec path, branch, worktree path, and next command.
 
@@ -28,3 +28,5 @@ Create a spec-backed Git worktree for isolated implementation.
 
 - If the branch or worktree already exists with different intent, ask before reusing it.
 - Do not delete worktrees or branches unless explicitly requested.
+- If the remote branch already exists, track it instead of creating an unrelated local branch.
+- Spec sync is one-way from the main repo to the worktree unless the user asks otherwise.

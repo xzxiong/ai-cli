@@ -23,8 +23,9 @@ Run the legacy PR review format.
    - File-by-file code review.
    - API/config changes.
    - Risk checks.
-5. Archive under `~/pr_review/`.
-6. Minimize previous review comments from the same user.
-7. Post the review comment.
+5. Use severity levels 🔴/🟡/🟢 and anchors `<a id="issue-N"></a>`.
+6. Archive under `~/pr_review/`, rotating existing files with `_bakNNN`.
+7. Minimize previous review comments from the same user when they start with `# Code Review:` or contain `## 〇、总结（TL;DR）`.
+8. Post the review comment.
 
 Prefer the main `review-pr` skill unless the user asks for v1 explicitly.

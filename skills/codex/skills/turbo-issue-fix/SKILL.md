@@ -18,7 +18,7 @@ Fix a `matrixorigin/turbo` GitHub issue with an auditable workflow.
 5. Add or update tests before the fix where feasible:
    - Go backend tests through `make ut` or `make ci`.
    - Frontend E2E through `make web-e2e`; `next build` is baseline validation.
-6. Implement the minimal fix using explicit structs, `pkg/xid.New()` for IDs, pointer nullable fields, and idempotency keys on critical writes.
+6. Implement the minimal fix using explicit structs, `pkg/xid.New()` for IDs, pointer nullable fields, `(limit, offset)` pagination, and idempotency keys on critical writes.
 7. Run regression validation.
 8. Summarize changed files, tests, and any residual risk.
 
@@ -26,3 +26,4 @@ Fix a `matrixorigin/turbo` GitHub issue with an auditable workflow.
 
 - Do not use raw `go test` when project Make targets are expected.
 - `apps/web` uses static export; `next start` is not valid.
+- E2E mocks intercept `apiBase`, which defaults to `http://127.0.0.1:3000`; account for URL normalization in browser-origin tests.

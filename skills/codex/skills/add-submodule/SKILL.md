@@ -15,10 +15,12 @@ Add a repository as `third/<name>` and document it in `AGENTS.md`.
 4. Check whether `third/<dir>` already exists as a submodule or directory.
 5. Run `git submodule add`, using `-b <branch>` only when requested.
 6. Update or create `AGENTS.md` with a `### third/<dir>` section under `## Submodules`.
-7. Report the submodule path, source URL, and suggested commit message.
+7. Include initialization/update commands in the AGENTS section.
+8. Report the submodule path, source URL, and suggested commit message.
 
 ## Rules
 
 - Keep the submodule under `third/`.
 - Do not overwrite an existing submodule section in `AGENTS.md`.
 - If a path exists but is not the requested submodule, stop and ask for direction.
+- Derive names from both SSH and HTTPS GitHub URLs, stripping `.git`.

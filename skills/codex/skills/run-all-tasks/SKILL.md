@@ -11,15 +11,18 @@ Execute Kiro spec tasks with persistent progress in `tasks.md`.
 
 1. Locate the target spec under `.kiro/specs/`; if multiple specs match and no name is provided, ask the user.
 2. Read `tasks.md` and find the first incomplete non-optional checkbox.
-3. Execute tasks in order, reading relevant files before each change.
-4. After each completed task, immediately mark its checkbox `- [x]`.
-5. Skip optional tasks marked `- [ ]*` unless the user explicitly requests them.
-6. For checkpoint/build tasks, run the requested build or default `go build ./...`; fix failures up to three rounds, then stop if still failing.
-7. Mark parent tasks complete only after their subtasks are complete.
-8. Report completed, skipped, modified files, and any blockers.
+3. Support `run task N` by executing the specified task instead of the first incomplete one.
+4. Execute tasks in order, reading relevant files before each change.
+5. After each completed task, immediately mark its checkbox `- [x]`.
+6. Skip optional tasks marked `- [ ]*` unless the user explicitly requests them.
+7. For checkpoint/build tasks, run the requested build or default `go build ./...`; fix failures up to three rounds, then stop if still failing.
+8. Mark parent tasks complete only after their subtasks are complete.
+9. Report completed, skipped, modified files, and any blockers.
 
 ## Rules
 
 - Checkpoint state lives in `tasks.md`; support resume from the first incomplete task.
 - Do not skip compile errors at checkpoints.
 - Do not perform unrelated refactors while executing tasks.
+- Treat descriptions containing `Checkpoint` or `确保编译通过` as checkpoint tasks.
+- All paths should follow `tasks.md`; do not assume files from memory.

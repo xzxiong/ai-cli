@@ -1,0 +1,4 @@
+interface:
+  display_name: "Merge To Prod"
+  short_description: "Create production branch sync PRs"
+  default_prompt: "Use $merge-to-prod to merge main toward prod and create the production PR."

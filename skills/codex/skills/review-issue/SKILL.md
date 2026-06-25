@@ -17,9 +17,9 @@ Review a GitHub issue's proposed technical plan using local code evidence.
    - Issue overview.
    - Feasibility analysis.
    - Strengths.
-   - Risks and mitigations.
+   - Risks and mitigations, covering design, performance, maintainability, and operations.
    - Alternative approaches.
-   - Implementation and testing suggestions.
+   - Implementation steps, pitfalls, testing strategy, and whether rollout/gray release is needed.
 6. Archive under `~/issue_review/<repo>_ISSUE<number>_<title>_<YYYYMMDD>.md`, rotating existing files with `_bakNNN`.
 7. Post the report as a GitHub issue comment.
 
@@ -27,3 +27,4 @@ Review a GitHub issue's proposed technical plan using local code evidence.
 
 - Base conclusions on code, not generic opinions.
 - Pair major risks with practical alternatives or mitigations.
+- Consider team context and delivery pressure; avoid impractical recommendations.
