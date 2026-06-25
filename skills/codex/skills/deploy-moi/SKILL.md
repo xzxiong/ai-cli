@@ -9,13 +9,26 @@ Bring up or diagnose a local MatrixFlow/MOI development environment.
 
 ## Workflow
 
-1. Run environment diagnostics: required tools, repo location, current containers, ports, and service state.
-2. Start infrastructure with Docker/volumes: MatrixOne/MySQL, Redis, MinIO, RabbitMQ, UNO.
-3. Initialize schemas and message topics.
-4. Build and start backend services in dependency order.
-5. Restart `apiserver` and `job-consumer` explicitly when first startup fails due to Poetry/env delays.
-6. Build/start frontend when requested.
-7. Verify health with service status, ports, logs, and end-to-end checks.
+Use an idempotent six-stage flow:
+
+1. Diagnostics: required tools, repo location, Docker state, ports, existing processes, and `make status`.
+2. Infrastructure: start Docker volumes/services for MatrixOne/MySQL, Redis, MinIO, RabbitMQ, UNO; wait for DB readiness.
+3. Initialization: load schemas and initialize message topics/queues.
+4. Backend: build/start connector-rpc, augmentation, workflow-scheduler, catalog-service, license-service, local-service, mock-service, openxml-service, apiserver, and job-consumer as applicable.
+5. Frontend: install/build/start the Vite frontend only when requested.
+6. Verification: auth login, API key, service status, logs, buckets, and optional CLI document pipeline test.
+
+## Critical Restart Path
+
+`apiserver` and `job-consumer` often fail on first startup because Poetry/env initialization lags. If they are stopped after `make start`, restart them explicitly:
+
+```bash
+sh start-apiserver.sh
+sh start-jobconsumer.sh
+make status
+```
+
+If scripts are missing, use the repo Makefile targets and inspect `tmp/apiserver.log` and `tmp/job-consumer.log`.
 
 ## Resources
 
@@ -27,3 +40,4 @@ Bring up or diagnose a local MatrixFlow/MOI development environment.
 
 - MatrixFlow repo: `~/go/src/github.com/matrixorigin/matrixflow`.
 - Keep diagnostics idempotent; report existing state before changing it.
+- Common auth check: POST `http://127.0.0.1:8000/auth/login` for `local-moi-account`.

@@ -1,6 +1,6 @@
 # Ops 模式 — 审查 Checklist
 
-面向基础设施/部署仓库（ops、gitops、moi-gitops、moi-op）。侧重资源配置、安全、影响范围、环境一致性。
+面向基础设施/部署仓库（ops、gitops、moi-gitops、moi-op、ob-ops）。侧重资源配置、安全、影响范围、环境一致性。
 
 ## 仓库识别与审查侧重
 
@@ -10,6 +10,7 @@
 | `gitops` | Pulumi (Go) | ACK 云服务部署：mocloud-services + moi-core + Ingress | 服务配置一致性、Ingress 路由、环境差异 |
 | `moi-gitops` | Pulumi (Go) + Helm | IDC moi-core 部署：Catalog + Mowl + Workers + 前端 + TLS | Helm values 正确性、unit 配置、secret 管理 |
 | `moi-op` | Pulumi (Go) + Helm | IDC 私有化全套：BYOA + RocketMQ + Redis + 连接器 + 前端 | chart 优先级、hook 逻辑、配置完整性 |
+| `ob-ops` | Pulumi / Helm / Scripts | 可观测性基础设施：Prometheus、Grafana、Loki、告警规则 | 监控覆盖、告警合理性、资源开销 |
 
 ## 报告结构
 
@@ -21,8 +22,9 @@ PR 基础信息
 ## 一、变更影响分析
 ## 二、资源配置审查
 ## 三、安全审查
-## 四、Pulumi / Helm 代码审查
-## 五、运维风险检查
+## 四、操作权限变动审查
+## 五、Pulumi / Helm 代码审查
+## 六、运维风险检查
 ```
 
 ---
@@ -32,7 +34,7 @@ PR 基础信息
 ```markdown
 - **PR**: [#<number> <title>](<pr_url>)
 - **分支**: `<head>` → `<base>` | **变更**: +<additions> / -<deletions>，<file_count> 个文件
-- **模式**: 🔧 Ops Review | **仓库类型**: <ops/gitops/moi-gitops/moi-op>
+- **模式**: 🔧 Ops Review | **仓库类型**: <ops/gitops/moi-gitops/moi-op/ob-ops>
 ```
 
 ---
@@ -110,9 +112,45 @@ PR 基础信息
 
 ---
 
-## 四、Pulumi / Helm 代码审查
+## 四、操作权限变动审查
 
-### 4.1 Pulumi 代码（Go/TypeScript）
+梳理 PR 修改后，运行时实际需要的 K8s / 云平台操作权限变动。
+
+### 4.1 权限变动摘要表
+
+列出本次 PR 引入的新增/变更操作权限（对比变更前）：
+
+| 操作 | 资源类型 | Namespace / Scope | 所需权限 | 来源 |
+|------|---------|-------------------|---------|------|
+| 示例：kubectl apply Job | batch/jobs | mo-benchmark-moi | create, patch | scripts/idc/mo-backup.sh |
+
+### 4.2 审查要点
+
+- **最小权限原则**：是否只申请了必需的权限？有无过宽的 `*` 或 `cluster-admin`？
+- **Secret 访问**：新增读取了哪些 Secret？Secret 中的 key 是否确认存在？
+- **跨 Namespace 访问**：是否跨命名空间操作？是否有对应的 RBAC 授权？
+- **新增 ServiceAccount / Role / RoleBinding**：如有新建，权限范围是否合理？
+- **GitHub Secrets 依赖**：workflow 新增了哪些 secrets 引用？是否已在仓库中配置？
+- **外部服务凭证**：新增访问外部服务（MinIO、OSS、Registry）的凭证来源是否安全？
+
+### 4.3 输出格式
+
+```markdown
+#### 权限变动总结
+
+**新增权限需求：**
+- `<KUBECONFIG/SA>` 需要在 `<namespace>` 下有 `<resources>` 的 `<verbs>` 权限
+- GitHub Secret `<NAME>` 需配置（用途：xxx）
+
+**潜在风险：**
+- 🔴/🟡 <具体风险描述>
+```
+
+---
+
+## 五、Pulumi / Helm 代码审查
+
+### 5.1 Pulumi 代码（Go/TypeScript）
 
 - 资源命名遵循项目约定？
 - `DependsOn` 依赖链正确？循环依赖？
@@ -120,14 +158,14 @@ PR 基础信息
 - 资源泄漏？（创建了但未纳入 state 管理）
 - `IgnoreChanges` 使用合理？导致配置漂移？
 
-### 4.2 Helm chart / values
+### 5.2 Helm chart / values
 
 - values 层级正确？（chart 默认 → 基础覆盖 → stack 覆盖 → unit 覆盖）
 - 新 values key 在 chart `values.yaml` 有默认值？
 - template 语法正确？（`{{ }}` 嵌套、条件、range）
 - chart 版本与 `Chart.yaml` / `Chart.lock` 一致？
 
-### 4.3 Pulumi 配置（Pulumi.*.yaml）
+### 5.3 Pulumi 配置（Pulumi.*.yaml）
 
 - 配置命名遵循 `<project>:<key>` 格式？
 - 敏感值使用 `secure:` 加密？
@@ -136,28 +174,28 @@ PR 基础信息
 
 ---
 
-## 五、运维风险检查
+## 六、运维风险检查
 
-### 5.1 破坏性变更
+### 6.1 破坏性变更
 
 - 导致 Pod 重启？（ConfigMap/Secret 变更、image tag 变更）
 - 导致数据丢失？（PVC 删除、StorageClass 变更）
 - 导致服务中断？（Ingress 路由变更、Service 删除）
 - StatefulSet 变更需手动干预？（volumeClaimTemplates 不可变）
 
-### 5.2 部署顺序
+### 6.2 部署顺序
 
 - 组件间有部署顺序依赖？（CRD 先于 CR）
 - Pulumi priority 设置正确？
 - before/after hook 需调整？
 
-### 5.3 监控 & 告警
+### 6.3 监控 & 告警
 
 - 新组件有对应监控配置？（Prometheus scrape、Grafana dashboard）
 - 告警规则需更新？
 - 日志采集覆盖新组件？
 
-### 5.4 CI/CD 流水线
+### 6.4 CI/CD 流水线
 
 - GitHub Actions workflow 变更正确？
 - preview / up 触发条件合理？
