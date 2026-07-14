@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub Comment File"
+  short_description: "Replace GitHub comments from local files"
+  default_prompt: "Use $gh-comment-file to replace a GitHub issue or PR comment body with the contents of a local file."

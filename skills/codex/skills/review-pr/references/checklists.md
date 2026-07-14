@@ -57,6 +57,24 @@ At the top of the review, state one of these outcomes:
 - `Yellow`: promising, but missing critical validation or guardrails
 - `Red`: core assumptions break or implementation contradicts the stated approach
 
+## Design Mode
+
+Use this mode for pure design/docs/spec/RFC PRs with no runtime behavior changes. The goal is to assess whether the proposal is complete and safe enough to become an implementation baseline.
+
+### Priorities
+
+- Validate the problem statement, goals, non-goals, assumptions, and affected actors.
+- Check internal consistency across terminology, state machines, data flow, permissions, errors, and lifecycle.
+- Verify source-of-truth ownership and module boundaries for APIs, schemas, config, storage, and policy decisions.
+- Inspect migration, rollout, rollback, observability, and validation gates.
+- Use current repository code only as evidence for whether the design matches reality.
+
+### Non-Goals
+
+- Do not include a file-by-file code review section.
+- Do not flag missing code tests for docs-only PRs; review whether the design specifies adequate future validation.
+- Do not submit GitHub approval/request-changes by default.
+
 ## Evidence Heuristics
 
 - Read the surrounding file before claiming a bug from a diff hunk.

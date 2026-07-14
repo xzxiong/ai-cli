@@ -128,6 +128,54 @@ gh api graphql -f query='...'  # minimizeComment(classifier: OUTDATED)
 gh pr comment <number> --repo <OWNER/REPO> --body-file <归档md路径>
 ```
 
+### Step 8. 按合并建议提交 Review 决议
+
+发布评论后，**必须**根据报告「〇、总结（TL;DR）」中的**合并建议**提交 GitHub PR review（不只留言）：
+
+| 合并建议（报告原文） | GitHub review 动作 | 命令 |
+|----------------------|--------------------|------|
+| **建议合并** | `APPROVE` | `gh pr review <number> --repo <OWNER/REPO> --approve --body "<短评>"` |
+| **修复后合并** | `REQUEST_CHANGES` | `gh pr review <number> --repo <OWNER/REPO> --request-changes --body "<短评>"` |
+| **需要重大修改** | `REQUEST_CHANGES` | 同上 |
+| 其他 / 无法判断 | `COMMENT`（仅评论，不 approve 也不 request changes） | `gh pr review <number> --repo <OWNER/REPO> --comment --body "<短评>"` |
+
+**短评模板**（`--body`，与 Step 7 长报告互补，保持简短）：
+
+```text
+# 建议合并
+Code Review 通过：无 🔴 必须修改项。详情见上方审查评论。
+
+# 修复后合并 / 需要重大修改
+请求修改：存在 🔴 必须修改项（或方案需重大调整），修复后再 merge。
+要点：
+- I-1: <一句话>
+- I-2: <一句话>
+详情见上方审查评论。
+```
+
+**规则**：
+1. **以报告合并建议为准**，不要只数 🔴 条数自行改判；若建议与 🔴 不一致，先修正报告建议再提交 review。
+2. **常规映射**：无 🔴 → 建议合并 → approve；有 🔴 → 修复后合并 → request changes；方案推倒级问题 → 需要重大修改 → request changes。
+3. **幂等**：若当前用户已对同一 commit 提交过 pending/已有 review，先用 `gh api repos/<OWNER>/<REPO>/pulls/<number>/reviews --jq ...` 查看；对同一 head SHA 勿重复 approve。需要改决议时，用新的 `gh pr review` 覆盖性提交（GitHub 以最新 review 为准）。
+4. **权限失败**：若 `APPROVE` / `REQUEST_CHANGES` 因权限或 branch protection 失败，在对用户的回复中说明，并保留 Step 7 评论；不要静默跳过。
+5. **草稿 PR / 已关闭 / 已合并**：跳过 Step 8，仅在回复中说明原因。
+6. **自己的 PR**：GitHub 不允许 self-approve；若 `author.login` 是当前用户，跳过 approve，可仍 `request changes` 或只 comment。
+7. 批量 review 多个 PR 时，**每个 PR 独立**执行 Step 7 + Step 8。
+
+```bash
+# 示例：建议合并
+gh pr review <number> --repo <OWNER/REPO> --approve --body "Code Review 通过：无 🔴 必须修改项。详情见上方审查评论。"
+
+# 示例：修复后合并
+gh pr review <number> --repo <OWNER/REPO> --request-changes --body "$(cat <<'EOF'
+请求修改：存在 🔴 必须修改项，修复后再 merge。
+要点：
+- I-1: <摘要>
+详情见上方审查评论。
+EOF
+)"
+```
+
 ## 审查原则
 
 1. **务实导向**：只提有价值的建议，不吹毛求疵

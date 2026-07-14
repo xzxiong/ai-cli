@@ -1,6 +1,6 @@
 ---
 name: merge-main
-description: "Merge an upstream branch into the current branch and resolve conflicts end to end. Auto-detect MatrixFlow/moi-* repositories as dev-based and other repositories as main-based. Use for `merge main`, `merge dev`, `合并 main`, `合并 dev`, `resolve conflicts`, `解决冲突`, `update from main/dev`, or rebase requests."
+description: "Merge an upstream branch into the current branch and resolve conflicts end to end. Auto-detect matrixorigin/matrixflow and moi-* repositories as dev-based and other repositories as main-based. Use for `merge main`, `merge dev`, `合并 main`, `合并 dev`, `resolve conflicts`, `解决冲突`, `update from main/dev`, or rebase requests."
 ---
 
 # Merge Main
@@ -11,8 +11,9 @@ Merge the target branch into the current branch, resolve conflicts, adapt downst
 
 - If the user specifies a branch, use it.
 - Otherwise detect the target branch:
-  - remote URL contains `matrixflow` or `/moi-` -> `dev`
+  - remote URL contains `matrixorigin/matrixflow`, `matrixflow`, or `/moi-` -> `dev`
   - all other repos -> `main`
+- If the resolved target is `<remote>/<branch>`, run `git fetch <remote> <branch>` once before merge/rebase, even when a local tracking ref already exists.
 - Support `--rebase` only when explicitly requested.
 
 ## Workflow
@@ -22,7 +23,7 @@ Merge the target branch into the current branch, resolve conflicts, adapt downst
    - `git branch --show-current`
    - `git remote -v`
    - if there are unrelated local changes, do not overwrite them.
-2. Fetch the chosen upstream remote and target branch.
+2. Fetch the chosen upstream remote and target branch: run `git fetch <remote> <branch>` first.
 3. Run `git merge <remote>/<branch>` or `git rebase <remote>/<branch>`.
 4. If conflicts occur, list them with `git diff --name-only --diff-filter=U`.
 5. Resolve conflicts by priority:

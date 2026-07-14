@@ -1,4 +1,4 @@
 interface:
   display_name: "PR Link"
-  short_description: "Print GitHub pull request URLs"
-  default_prompt: "Use $pr-link to print the GitHub PR URL for the current branch."
+  short_description: "Print GitHub PR URLs, including fork-based PRs"
+  default_prompt: "Use $pr-link to print the GitHub PR URL for the current branch, checking the base repository when the branch is from a fork."

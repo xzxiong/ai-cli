@@ -45,6 +45,10 @@ PR 基础信息
 - 影响环境：dev / qa / prod / IDC
 - 风险等级：🟢 低风险 / 🟡 需确认 / 🔴 高风险
 - 关键发现摘要
+- 合并建议（三选一，供 Step 8 提交 GitHub review）：
+  - **建议合并** — 🟢 低风险、无阻塞 → approve
+  - **修复后合并** — 🟡/🔴 有必须确认或修改项 → request changes
+  - **需要重大修改** — 高风险且方案不可接受 → request changes
 
 ---
 
