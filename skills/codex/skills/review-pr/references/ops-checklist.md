@@ -164,6 +164,9 @@ PR 基础信息
 - 新 values key 在 chart `values.yaml` 有默认值？
 - template 语法正确？（`{{ }}` 嵌套、条件、range）
 - chart 版本与 `Chart.yaml` / `Chart.lock` 一致？
+- **新增 values/config key 强制说明**：在新增 key 所在配置文件中保留紧邻说明（格式不支持注释时，在同一配置文件中以明确的 key 引用说明）。说明必须列出目标 K8s cluster/unit/namespace 下的有效值或范围、使其有效的资源前提及各值的运维效果；仅写类型、默认值或“按需设置”不合格。
+- **配对配置强制说明**：新增 key 必须明确标识“独立”或“配对”。配对时必须写出另一侧的精确 `<file path>:<key>`、值覆盖来源/优先级和兼容组合，并说明不一致的后果；审查时沿 `chart defaults → base → stack/unit overlay → template → rendered manifest` 校验。
+- 上述说明缺失、无法映射到真实 K8s 资源，或与实际渲染/覆盖结果不一致，一律为 `🔴 必须修改`；PR body 或外部文档不能替代配置文件内说明。
 
 ### 5.3 Pulumi 配置（Pulumi.*.yaml）
 
@@ -171,6 +174,7 @@ PR 基础信息
 - 敏感值使用 `secure:` 加密？
 - 类型正确？（string vs number vs bool vs object）
 - 新配置在 README/文档中说明？
+- 对新增 key，除 README/文档外，`Pulumi.*.yaml` 或同一配置文件中的明确说明还必须写明：目标 K8s 环境下的有效值/范围及其集群资源前提；是否与其他配置配对。若配对，标注对应 `<file path>:<key>`、覆盖来源和有效组合；若不配对，明确标注独立。缺失或过期说明为 `🔴`。
 
 ---
 
