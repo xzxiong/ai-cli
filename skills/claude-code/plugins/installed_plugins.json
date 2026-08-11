@@ -12,20 +12,20 @@
     ],
     "code-review@claude-plugins-official": [
       {
-        "gitCommitSha": "6d5f79446b996d64c87f1bedf0e13eb4dda542d2",
+        "gitCommitSha": "20a5a1f1a2b55b13e85dff5416613a796d089016",
         "installPath": "${PLUGINS_CACHE}/claude-plugins-official/code-review/unknown",
         "installedAt": "2026-04-25T13:08:18.713Z",
-        "lastUpdated": "2026-07-28T06:34:27.759Z",
+        "lastUpdated": "2026-08-10T09:35:31.458Z",
         "scope": "user",
         "version": "unknown"
       }
     ],
     "github@claude-plugins-official": [
       {
-        "gitCommitSha": "6d5f79446b996d64c87f1bedf0e13eb4dda542d2",
+        "gitCommitSha": "20a5a1f1a2b55b13e85dff5416613a796d089016",
         "installPath": "${PLUGINS_CACHE}/claude-plugins-official/github/unknown",
         "installedAt": "2026-04-25T13:08:30.059Z",
-        "lastUpdated": "2026-07-28T06:34:27.757Z",
+        "lastUpdated": "2026-08-10T09:35:31.458Z",
         "scope": "user",
         "version": "unknown"
       }
@@ -51,20 +51,20 @@
     ],
     "pr-review-toolkit@claude-plugins-official": [
       {
-        "gitCommitSha": "6d5f79446b996d64c87f1bedf0e13eb4dda542d2",
+        "gitCommitSha": "20a5a1f1a2b55b13e85dff5416613a796d089016",
         "installPath": "${PLUGINS_CACHE}/claude-plugins-official/pr-review-toolkit/unknown",
         "installedAt": "2026-04-25T13:09:39.388Z",
-        "lastUpdated": "2026-07-28T06:34:27.758Z",
+        "lastUpdated": "2026-08-10T09:35:31.458Z",
         "scope": "user",
         "version": "unknown"
       }
     ],
     "skill-creator@claude-plugins-official": [
       {
-        "gitCommitSha": "6d5f79446b996d64c87f1bedf0e13eb4dda542d2",
+        "gitCommitSha": "20a5a1f1a2b55b13e85dff5416613a796d089016",
         "installPath": "${PLUGINS_CACHE}/claude-plugins-official/skill-creator/unknown",
         "installedAt": "2026-04-25T13:09:20.287Z",
-        "lastUpdated": "2026-07-28T06:34:27.758Z",
+        "lastUpdated": "2026-08-10T09:35:31.458Z",
         "scope": "user",
         "version": "unknown"
       }

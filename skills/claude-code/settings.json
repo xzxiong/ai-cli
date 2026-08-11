@@ -75,7 +75,6 @@
       "Bash(mkdir -p *)",
       "Bash(rm -rf /tmp/*)",
       "Bash(rm /tmp/*)",
-      "Bash(rtk *)",
       "Bash(sed *)",
       "Bash(sort *)",
       "Bash(tail *)",
@@ -88,10 +87,10 @@
       "Bash(zip *)",
       "Edit(/tmp/**)",
       "Read(/tmp/**)",
-      "Skill(*)",
+      "mcp__memoria",
+      "mcp__memoria__*",
       "Skill(update-config)",
-      "mcp__codegraph__*",
-      "mcp__memoria__*"
+      "Skill(*)"
     ]
   }
 }

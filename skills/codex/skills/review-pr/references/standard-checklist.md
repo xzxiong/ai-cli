@@ -232,19 +232,6 @@ A → B ──→ D     ← 移除 C 对 B 的依赖
 | 配置 | `config_key` | 默认值变更 | ✅ | 生效范围 |
 | Schema | `ModelName` | 新增字段 | ✅ | 内部使用 |
 
-### 新增运行时配置项（强制）
-
-每个新增运行时配置项都必须在其**配置文件内**（优先紧邻 key 的注释；配置格式不支持注释时，使用同一配置文件中明确引用该 key 的说明块）完成说明。PR 描述、Issue、代码注释或独立文档均不能替代。缺少任一说明，直接列为 `🔴 必须修改`。
-
-| 配置项 | 配置位置 | K8s 环境下的有效值与前提 | 是否配对 | 配对配置位置与约束 | 生效链路 |
-|--------|----------|--------------------------|----------|------------------|----------|
-| `key` | `path/to/values.yaml:key` | 有效值/范围；目标 cluster/unit/namespace；依赖的 StorageClass、node label、资源容量、端口等 | 独立 / 是 | 独立，或 `path/to/file.yaml:other_key`；值组合/缺失后果 | defaults → base → overlay → template → K8s resource |
-
-核查要求：
-- 有效值必须基于目标 K8s 环境的真实约束说明，而非只写类型、示例或“按需设置”。例如：`StorageClass` 必须是目标集群已存在的类；node selector/toleration 必须匹配实际节点标签/污点；副本数、requests/limits 必须说明可用容量前提；端口必须与 Service/Container/Ingress 的对应配置一致。
-- 必须明确该 key 是独立项还是配对项。配对项必须给出另一侧的精确 `<file path>:<key>`，覆盖优先级/来源（如 chart default、base values、stack overlay）及两者的有效组合；不能只写“需同时配置”。
-- 审查者须沿 `chart defaults → base values → 环境/stack overlay → template → rendered manifest/应用消费点` 验证注释与实际生效值一致；说明已过期同样是 `🔴`。
-
 检查范围：
 - API 接口变更（HTTP/gRPC/WorkItem）
 - 请求/响应字段增删改
