@@ -16,6 +16,12 @@ description: |
 
 # BVT Issue Submission Skill
 
+> **Canonical scenario (body + quality bar)**: `~/.codex/skills/new-issue/references/scenario-bvt.md`  
+> **Router**: `~/.codex/skills/new-issue/SKILL.md`  
+> Prefer the core-six body in `scenario-bvt.md` over the legacy short template below.  
+> After create, always run `~/.codex/skills/new-issue/scripts/apply-matrixone-defaults.sh --type bug`.  
+> Keep local `scripts/` for log helpers.
+
 ## Purpose
 
 Submit BVT bugs to GitHub instantly by extracting all information from the user's initial message.

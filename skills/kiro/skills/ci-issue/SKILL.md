@@ -15,6 +15,11 @@ description: |
 
 # CI Issue Submission & Analysis Skill
 
+> **Canonical scenario (body + quality bar)**: `~/.codex/skills/new-issue/references/scenario-ci.md`  
+> **Router**: `~/.codex/skills/new-issue/SKILL.md`  
+> After create, always run `~/.codex/skills/new-issue/scripts/apply-matrixone-defaults.sh --type bug`.  
+> Keep local `scripts/` for log helpers; do not fork a second body template here.
+
 ## Purpose
 
 Analyze GitHub Actions CI failures from the `matrixorigin/matrixflow` monorepo, create a GitHub issue, and post detailed analysis — all in one step.

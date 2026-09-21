@@ -1,0 +1,4 @@
+interface:
+  display_name: "New Issue"
+  short_description: "Create MatrixOrigin issues with Project defaults"
+  default_prompt: "Use $new-issue to create a MatrixOrigin issue with its Issue Type, Project fields, and labels."

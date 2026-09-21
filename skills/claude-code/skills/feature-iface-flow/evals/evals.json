@@ -1,0 +1,23 @@
+{
+  "skill_name": "feature-iface-flow",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "new skills, 帮我完成 feature 的设计与实现。Check: 先看下 global skills 中我有哪些涉及 设计-分析-测试的逻辑。Design: 抽象接口交互，接口单独文件、实现带后缀；Mock 测试优先。Test: 白话文 MVP + 边界。验收: 接口测试、Gate、Test 协同。",
+      "expected_output": "先输出 global skills 设计/分析/测试盘点；说明缺口并由本 skill 补齐；给出 Check→Design→Impl→Test→Review→验收流程与接口/Mock/MVP 约定，而不是直接写无关业务代码。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "给 catalog 里一个新的 SuspendLease 能力做 feature：设计接口、Mock 契约测试、再实现，最后按 MVP 路径验收。",
+      "expected_output": "先需求骨架与接口文件规划（iface/impl/mock/contract）；MVP 白话与边界表；实现顺序 Mock→Impl→gate；测试带意义注释与验收三联门。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "review-pr #17557 看看有没有问题",
+      "expected_output": "不应主路径走 feature-iface-flow；应走 review-pr / pr-review。",
+      "files": []
+    }
+  ]
+}
