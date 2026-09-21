@@ -1,6 +1,6 @@
 ---
 name: new-pr
-description: Create a new branch from current local changes, commit, push, open a PR, update its description, and optionally run code review. Ops repositories skip the default review unless `--review` is requested. Use for `new pr`, `开 PR`, `提 PR`, `create/open/submit PR`, `推个 PR`, or `/new-pr`.
+description: Create a new branch from current local changes, commit, push, open a PR, update its description, and optionally run code review. Use for `new pr`, `开 PR`, `提 PR`, `create/open/submit PR`, `推个 PR`, or `/new-pr`.
 ---
 
 # New PR
@@ -10,7 +10,7 @@ Create a PR from current local changes.
 ## Workflow
 
 1. Confirm the current directory is a Git repo and there are local changes.
-2. Parse input: commit message plus optional `--base <branch>`, `--branch <name>`, `--no-review`, and `--review`. Reject an input that includes both `--no-review` and `--review`.
+2. Parse input: commit message plus optional `--base <branch>`, `--branch <name>`, and `--no-review`.
 3. Detect fork vs same-repo mode from remotes:
    - Iterate all remotes by URL, not by remote name.
    - Fork mode if one remote points to `xzxiong/<repo>` and another to `matrixorigin/<repo>`.
@@ -24,11 +24,8 @@ Create a PR from current local changes.
 8. Reuse an existing open PR before creating a new one:
    - fork: `gh pr list --repo <repo> --head xzxiong:<branch> --state open`
    - same-repo: `gh pr list --repo <repo> --head <branch> --state open`
-9. Update the PR description using the `update-pr-desc` workflow. Decide whether to start the `review-pr` workflow as follows:
-   - Do not review when `--no-review` is set.
-   - For `ops`, `gitops`, `moi-gitops`, `moi-op`, and `ob-ops`, do not review by default. Run `review-pr` only when the user explicitly requests review or sets `--review`.
-   - For all other repositories, run `review-pr` by default unless `--no-review` is set.
-   - PR description/review must be done by the current agent, not delegated.
+9. Update PR description and run review unless `--no-review` is set.
+   - PR description/review must be done by the current agent using `update-pr-desc` and `review-pr` workflows, not delegated.
 
 ## Safety
 

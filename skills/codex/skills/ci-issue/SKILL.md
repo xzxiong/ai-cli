@@ -1,40 +1,33 @@
 ---
 name: ci-issue
-description: Analyze MatrixFlow GitHub Actions CI failures (Moi-Core, lint/doc/unit/integration, timeout/OOM/LOAD evidence) and create a structured issue. Use for `/ci-issue`, "ci issue", "new ci issue", or an Actions run/job URL that should become an issue. Delegates body quality and MatrixOrigin defaults to new-issue scenario-ci.
+description: Analyze MatrixFlow GitHub Actions CI failures from a run URL and create a structured GitHub issue. Use for `/ci-issue`, Moi-Core CI failures, BVT-like CI failures, or requests to submit an issue from CI logs.
 ---
 
 # CI Issue
 
-Thin entry point into **new-issue → CI scenario**.
+Analyze general MatrixFlow CI failures and create a bug issue.
 
-## Required reads
+## Workflow
 
-1. `../new-issue/SKILL.md` — router, quality bar, create + MatrixOrigin defaults  
-2. `../new-issue/references/scenario-ci.md` — **only** CI analysis tiers, ports, resource rules, body template  
+1. Parse the GitHub Actions URL and fetch run metadata from `matrixorigin/matrixflow`: conclusion, start/update time, branch, short SHA, workflow name, display title, and event.
+2. Gather failed jobs, failed steps, and check-run annotations via `gh api --paginate`.
+3. For Moi-Core CI, download `moi-core-ci-artifacts` first; inspect `ci-test.log`, `test-python-sdk.log`, `test.log`, and `ci-exit-code`.
+4. Scan logs for `FAIL`, `ERROR`, `undefined`, `cannot use`, `has no field`, `panic`, `Traceback`, `exit status`, `connection refused`, and `bind: address already in use`.
+5. Fall back to `gh run view --log-failed` only when artifacts are unavailable.
+6. Classify the failure: Go compilation, doc inconsistency (`make doc-update`), lint, unit/integration test, Python SDK, MO startup, port conflict, or timeout.
+7. Create an issue labeled `kind/bug-moi,kind/bug`, assigned to `xzxiong`.
+8. Upload useful logs to a public gist.
+9. Post an analysis comment with failed jobs, annotations, stage errors, port/service evidence, root cause, and likely fix. Keep below GitHub limits.
 
-Do **not** load other `scenario-*.md` files.
+## Port Hints
 
-## Behavior
+- `8081`/`8082`: moi-core catalog
+- `50051`: mowl
+- `6001`: MatrixOne
+- `8000`: local-service
+- `8910`: workflow_be
+- `9000`: connector_rpc
 
-1. Input: GitHub Actions run or job URL (default repo `matrixorigin/matrixflow`).
-2. Follow `scenario-ci.md` end-to-end: metadata → tiered logs → classify → dedup → create issue → `apply-matrixone-defaults.sh --type bug` → gist + analysis comment when useful.
-3. `/ci-issue` implies **create + comment** (external writes allowed). If the user only asks for analysis, report without creating.
-4. Assignee default `xzxiong` when creating unless overridden; labels `kind/bug-moi`, `kind/bug` only if they exist.
-5. Temp: `/tmp/ci-issue-<run-id>/`; clean up after post.
+## Temporary Files
 
-## Resolve helper
-
-```bash
-for c in \
-  "$(dirname "$0")/../new-issue/scripts/apply-matrixone-defaults.sh" \
-  /data2/xzxiong/.claude/skills/new-issue/scripts/apply-matrixone-defaults.sh \
-  /data2/xzxiong/.codex/skills/new-issue/scripts/apply-matrixone-defaults.sh
-do
-  [[ -x "$c" ]] && helper="$c" && break
-done
-```
-
-## Out of scope
-
-- BVT product pytest + `bvt-tag-issue` → use **bvt-issue** / `scenario-bvt.md`
-- Long-term runner capacity redesign without a failing run → **new-issue** infra scenario  
+Use `/tmp/ci-issue-<run-id>/` for artifacts and cleanup after posting unless the logs are still needed for follow-up.

@@ -15,7 +15,7 @@
         "gitCommitSha": "c447c3207a425bc4e2a0d068435f64b0477ae981",
         "installPath": "${PLUGINS_CACHE}/claude-plugins-official/code-review/c447c3207a42",
         "installedAt": "2026-04-25T13:08:18.713Z",
-        "lastUpdated": "2026-09-19T06:45:20.352Z",
+        "lastUpdated": "2026-09-21T03:49:36.928Z",
         "scope": "user",
         "version": "c447c3207a42"
       }
@@ -25,7 +25,7 @@
         "gitCommitSha": "c447c3207a425bc4e2a0d068435f64b0477ae981",
         "installPath": "${PLUGINS_CACHE}/claude-plugins-official/github/c447c3207a42",
         "installedAt": "2026-04-25T13:08:30.059Z",
-        "lastUpdated": "2026-09-19T06:45:20.352Z",
+        "lastUpdated": "2026-09-21T03:49:36.927Z",
         "scope": "user",
         "version": "c447c3207a42"
       }
@@ -54,7 +54,7 @@
         "gitCommitSha": "c447c3207a425bc4e2a0d068435f64b0477ae981",
         "installPath": "${PLUGINS_CACHE}/claude-plugins-official/pr-review-toolkit/c447c3207a42",
         "installedAt": "2026-04-25T13:09:39.388Z",
-        "lastUpdated": "2026-09-19T06:45:20.349Z",
+        "lastUpdated": "2026-09-21T03:49:36.928Z",
         "scope": "user",
         "version": "c447c3207a42"
       }
@@ -64,7 +64,7 @@
         "gitCommitSha": "c447c3207a425bc4e2a0d068435f64b0477ae981",
         "installPath": "${PLUGINS_CACHE}/claude-plugins-official/skill-creator/c447c3207a42",
         "installedAt": "2026-04-25T13:09:20.287Z",
-        "lastUpdated": "2026-09-19T06:45:20.350Z",
+        "lastUpdated": "2026-09-21T03:49:36.928Z",
         "scope": "user",
         "version": "c447c3207a42"
       }
