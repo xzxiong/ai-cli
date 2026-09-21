@@ -12,14 +12,16 @@ Convert chat discussions or requirements into structured GitHub issues.
 ```
 
 **Process:**
-1. Extract key points: background, goals, technical approach
-2. Identify actionable tasks from discussion
-3. Create parent issue with structured body:
-   - 背景 (Background)
-   - 目标 (Goal)
-   - 技术方案 (Technical Approach)
-   - 任务清单 (Task List)
-   - 优先级 (Priority)
+1. Follow `/new-issue` quality bar: 背景, 目标(+非目标), 名词解释, 事实依据, 数据依据, 方案(预案), 任务清单, 测试方案, 验收标准. Classify and read **one** scenario file under `~/.claude/skills/new-issue/references/scenario-*.md` (ci/bvt/infra/bug/perf/feature/docs). Do not load all scenarios. Index: `body-templates.md`.
+2. Identify actionable tasks from discussion; do not invent metrics/logs.
+3. Create parent issue with that structured body (thin docs/chore may omit unused sections, but never drop evidence that exists).
+4. For any created issue in a repository owned by `matrixorigin`, run the shared defaulting helper immediately. Resolve the issue number from the created URL first:
+   ```bash
+   issue_number="$(gh issue view "$issue_url" --repo "$repo" --json number --jq .number)"
+   /data2/xzxiong/.codex/skills/new-issue/scripts/apply-matrixone-defaults.sh \
+     --repo "$repo" --issue "$issue_number"
+   ```
+   The helper adds `New MatrixOne Intelligence`, sets the Issue Type, Project Priority, active Iteration, and `视角=开发实现`, then applies conservative existing Labels. Do not claim completion if it reports missing `project` authorization, an Issue Type, Project field, option, or active Iteration.
 
 ### 2. Breakdown Parent Issue
 Read parent issue, extract tasks from checklist, create and link sub-issues.
@@ -33,6 +35,7 @@ Read parent issue, extract tasks from checklist, create and link sub-issues.
 2. Extract checklist items: `grep -P '^\s*-\s*\[\s*\]\s*'`
 3. For each task:
    - Create sub-issue with structured body
+   - Apply `/data2/xzxiong/.codex/skills/new-issue/scripts/apply-matrixone-defaults.sh --repo "$repo" --issue <child_number>` before linking it
    - Get GraphQL node IDs
    - Link via `addSubIssue` mutation
 4. Optionally update parent body with task references
@@ -92,24 +95,33 @@ mutation {
 ### Sub-Issue Template
 ```markdown
 ## 目标
-<Specific, actionable objective>
+<Specific, actionable objective + measurable success>
 
-## 技术细节
-- Implementation approach
-- Technical considerations
-- Resources needed
+## 名词解释
+| 名词 | 含义 |
+|------|------|
+| | |
 
-## 验证标准
+## 事实依据
+- 相关路径 / 配置 / 日志 / 复现：
+
+## 数据依据
+- 基线或待采集指标：
+
+## 方案（预案）
+- 推荐做法 / 备选 / 回滚：
+
+## 测试方案
+- [ ] 功能场景
+- [ ] 回归
+- [ ] 观测验收
+
+## 验收标准
 - [ ] Acceptance criteria 1
 - [ ] Acceptance criteria 2
-- [ ] Testing completed
 
 ## 关联
 Part of #<parent_number>
-
----
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```
 
 ## Examples
