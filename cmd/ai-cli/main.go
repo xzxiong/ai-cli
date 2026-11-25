@@ -19,12 +19,12 @@ import (
 )
 
 type toolPaths struct {
-	name                 string
-	commandsCandidates   []string
-	skillsCandidates     []string
-	knowledgeCandidates  []string
-	learningCandidates   []string
-	agentCandidates      []string
+	name                string
+	commandsCandidates  []string
+	skillsCandidates    []string
+	knowledgeCandidates []string
+	learningCandidates  []string
+	agentCandidates     []string
 }
 
 type cliConfig struct {
@@ -42,12 +42,12 @@ type projectConfig struct {
 }
 
 type toolConfig struct {
-	Root                 string   `yaml:"root"`
-	CommandsCandidates   []string `yaml:"commands"`
-	SkillsCandidates     []string `yaml:"skills"`
-	KnowledgeCandidates  []string `yaml:"knowledge"`
-	LearningCandidates   []string `yaml:"learning"`
-	AgentCandidates      []string `yaml:"agents"`
+	Root                string   `yaml:"root"`
+	CommandsCandidates  []string `yaml:"commands"`
+	SkillsCandidates    []string `yaml:"skills"`
+	KnowledgeCandidates []string `yaml:"knowledge"`
+	LearningCandidates  []string `yaml:"learning"`
+	AgentCandidates     []string `yaml:"agents"`
 }
 
 const defaultConfigFileName = ".ai-cli.yaml"
@@ -416,12 +416,12 @@ func resolveGlobalToolPaths(tool string, cfg cliConfig) (toolPaths, error) {
 		}
 		claudeRoots = append(claudeRoots, filepath.Join(home, ".claude"), filepath.Join(home, ".claude-code"), filepath.Join(home, ".claudecode"))
 		return mergeToolConfig(toolPaths{
-			name:                 "claude-code",
-			commandsCandidates:   appendPaths(claudeRoots, "commands"),
-			skillsCandidates:     appendPaths(claudeRoots, "skills"),
-			knowledgeCandidates:  appendPaths(claudeRoots, "knowledge"),
-			learningCandidates:   nil,
-			agentCandidates:      append(appendPaths(claudeRoots, "agents"), appendPaths(claudeRoots, "agent")...),
+			name:                "claude-code",
+			commandsCandidates:  appendPaths(claudeRoots, "commands"),
+			skillsCandidates:    appendPaths(claudeRoots, "skills"),
+			knowledgeCandidates: appendPaths(claudeRoots, "knowledge"),
+			learningCandidates:  nil,
+			agentCandidates:     append(appendPaths(claudeRoots, "agents"), appendPaths(claudeRoots, "agent")...),
 		}, cfg.Global.Tools["claude-code"]), nil
 	default:
 		return toolPaths{}, fmt.Errorf("unsupported tool %q", tool)
@@ -460,12 +460,12 @@ func resolveProjectToolPaths(tool string, project string, cfg cliConfig) (toolPa
 			filepath.Join(projectRoot, ".claudecode"),
 		}
 		return mergeToolConfig(toolPaths{
-			name:                 "claude-code",
-			commandsCandidates:   appendPaths(roots, "commands"),
-			skillsCandidates:     appendPaths(roots, "skills"),
-			knowledgeCandidates:  appendPaths(roots, "knowledge"),
-			learningCandidates:   nil,
-			agentCandidates:      append(appendPaths(roots, "agents"), appendPaths(roots, "agent")...),
+			name:                "claude-code",
+			commandsCandidates:  appendPaths(roots, "commands"),
+			skillsCandidates:    appendPaths(roots, "skills"),
+			knowledgeCandidates: appendPaths(roots, "knowledge"),
+			learningCandidates:  nil,
+			agentCandidates:     append(appendPaths(roots, "agents"), appendPaths(roots, "agent")...),
 		}, projectCfg.Tools["claude-code"]), nil
 	default:
 		return toolPaths{}, fmt.Errorf("unsupported tool %q", tool)
@@ -664,13 +664,28 @@ func copyFile(src, dst string) error {
 		return err
 	}
 
+	info, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	mode := info.Mode().Perm()
+	writableMode := mode | 0o200
+
 	in, err := os.Open(src)
 	if err != nil {
 		return err
 	}
 	defer in.Close()
 
-	out, err := os.Create(dst)
+	// OpenFile's mode only applies when creating a file, so an existing
+	// read-only destination must be made writable before truncation.
+	out, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, writableMode)
+	if errors.Is(err, fs.ErrPermission) {
+		if chmodErr := os.Chmod(dst, writableMode); chmodErr != nil {
+			return fmt.Errorf("make destination %s writable: %w", dst, chmodErr)
+		}
+		out, err = os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, writableMode)
+	}
 	if err != nil {
 		return err
 	}
@@ -684,10 +699,7 @@ func copyFile(src, dst string) error {
 		return err
 	}
 
-	if info, err := os.Stat(src); err == nil {
-		_ = os.Chmod(dst, info.Mode().Perm())
-	}
-	return nil
+	return os.Chmod(dst, mode)
 }
 
 // claudeSettingsFile is the repo-side permissions template for Claude Code.
