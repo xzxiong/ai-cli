@@ -1,0 +1,12 @@
+{
+  "expectations": [
+    {"text": "正确解析 --rebase 与 --gates，不把 flag 当作分支名。", "passed": true, "evidence": "Agent rebased feature onto main and did not treat --gates as a ref."},
+    {"text": "完成 rebase，明确报告 SKIPPED (not configured)。", "passed": true, "evidence": "Response reports gates-ci SKIPPED because neither yml nor yaml exists; HEAD is rebased 3f869c7."},
+    {"text": "不编造 gates 回归成功。", "passed": true, "evidence": "Tests marked NOT RUN; no generic tests substituted for gates."}
+  ],
+  "summary": {"passed": 3, "failed": 0, "total": 3, "pass_rate": 1.0},
+  "execution_metrics": {"output_chars": 341, "transcript_chars": 0},
+  "timing": {"executor_duration_seconds": 110.21, "total_duration_seconds": 110.21},
+  "claims": [],
+  "user_notes_summary": {"uncertainties": [], "needs_review": [], "workarounds": []}
+}

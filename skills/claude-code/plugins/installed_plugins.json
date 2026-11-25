@@ -12,22 +12,22 @@
     ],
     "code-review@claude-plugins-official": [
       {
-        "gitCommitSha": "c447c3207a425bc4e2a0d068435f64b0477ae981",
-        "installPath": "${PLUGINS_CACHE}/claude-plugins-official/code-review/c447c3207a42",
+        "gitCommitSha": "f8c5e7a1dcb71b10cb74586224b5401f3de5db28",
+        "installPath": "${PLUGINS_CACHE}/claude-plugins-official/code-review/1.0.1",
         "installedAt": "2026-04-25T13:08:18.713Z",
-        "lastUpdated": "2026-09-19T06:45:20.352Z",
+        "lastUpdated": "2026-10-28T09:01:40.967Z",
         "scope": "user",
-        "version": "c447c3207a42"
+        "version": "1.0.1"
       }
     ],
     "github@claude-plugins-official": [
       {
-        "gitCommitSha": "c447c3207a425bc4e2a0d068435f64b0477ae981",
-        "installPath": "${PLUGINS_CACHE}/claude-plugins-official/github/c447c3207a42",
+        "gitCommitSha": "df9699a55c56707e9948a32951ea356638ea8519",
+        "installPath": "${PLUGINS_CACHE}/claude-plugins-official/github/df9699a55c56",
         "installedAt": "2026-04-25T13:08:30.059Z",
-        "lastUpdated": "2026-09-19T06:45:20.352Z",
+        "lastUpdated": "2026-11-19T01:58:30.377Z",
         "scope": "user",
-        "version": "c447c3207a42"
+        "version": "df9699a55c56"
       }
     ],
     "gopls-lsp@claude-plugins-official": [
@@ -51,22 +51,22 @@
     ],
     "pr-review-toolkit@claude-plugins-official": [
       {
-        "gitCommitSha": "c447c3207a425bc4e2a0d068435f64b0477ae981",
-        "installPath": "${PLUGINS_CACHE}/claude-plugins-official/pr-review-toolkit/c447c3207a42",
+        "gitCommitSha": "f8c5e7a1dcb71b10cb74586224b5401f3de5db28",
+        "installPath": "${PLUGINS_CACHE}/claude-plugins-official/pr-review-toolkit/1.0.1",
         "installedAt": "2026-04-25T13:09:39.388Z",
-        "lastUpdated": "2026-09-19T06:45:20.349Z",
+        "lastUpdated": "2026-10-28T09:01:40.973Z",
         "scope": "user",
-        "version": "c447c3207a42"
+        "version": "1.0.1"
       }
     ],
     "skill-creator@claude-plugins-official": [
       {
-        "gitCommitSha": "c447c3207a425bc4e2a0d068435f64b0477ae981",
-        "installPath": "${PLUGINS_CACHE}/claude-plugins-official/skill-creator/c447c3207a42",
+        "gitCommitSha": "df9699a55c56707e9948a32951ea356638ea8519",
+        "installPath": "${PLUGINS_CACHE}/claude-plugins-official/skill-creator/df9699a55c56",
         "installedAt": "2026-04-25T13:09:20.287Z",
-        "lastUpdated": "2026-09-19T06:45:20.350Z",
+        "lastUpdated": "2026-11-19T01:58:30.376Z",
         "scope": "user",
-        "version": "c447c3207a42"
+        "version": "df9699a55c56"
       }
     ]
   },

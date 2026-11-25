@@ -5,6 +5,8 @@ description: |
   自动检测默认分支：MatrixFlow/moi- 系列仓库默认合并 dev，其他仓库默认合并 main。
   不仅解决文本冲突，还会追踪所有受影响的调用链、单元测试、E2E 测试、
   外围工具适配（CI/CD、Dockerfile、scripts 等），确保合并后代码可编译、可通过测试。
+  支持 `--gates`：完成原合并后，按 .github/workflows 中 gates-ci 的选择与命令执行本地回归，
+  修复测试问题并复跑；未加此参数时保持原有行为。
 
   Use this skill when:
   - The user says "merge main", "合并 main", "merge latest main"
@@ -12,18 +14,6 @@ description: |
   - The user says "resolve conflicts", "解决冲突"
   - The user asks to update their branch with upstream changes
 
-triggers:
-  - "merge main"
-  - "merge latest main"
-  - "merge dev"
-  - "合并 main"
-  - "合并 dev"
-  - "resolve conflicts"
-  - "解决冲突"
-  - "update from main"
-  - "update from dev"
-  - "rebase main"
-  - "rebase dev"
 ---
 
 # Merge Main — 全面合并与冲突解决
@@ -32,7 +22,12 @@ triggers:
 
 ## Input
 
-`<branch>` (可选，自动检测默认分支)，可选 flag：`--rebase`（使用 rebase 而非 merge）
+`<branch>`（可选，自动检测默认分支），可选 flags：
+
+- `--rebase`：使用 rebase 而非 merge。
+- `--gates`：完成原有合并和 Step 7 后，运行 gates-ci 本地回归并修复测试问题。默认不启用。基础验证与 gates 选择重叠时保留最终结果，无需机械重复同一命令。
+
+`/merge-main [branch] [--rebase] [--gates]` 中的 flags 可组合、顺序不限；`--gates` 不接受值。不要把 `--gates` 当成目标分支。
 
 ## 默认分支检测
 
@@ -179,6 +174,8 @@ go test ./tests/e2e/... -count=1 -short 2>&1 | tail -20
 
 ### Step 7. 完成合并
 
+如果指定了 `--gates`，后续 gate 修复不属于本步；按下面的可选阶段处理，不自动追加提交。
+
 ```bash
 # 如果是 merge 模式
 git add -A    # 注意排除不应提交的文件（.claude/, .mcp.json 等）
@@ -202,6 +199,19 @@ git rebase --continue
 ## 冲突解决 Checklist
 
 Read `~/.claude/skills/merge-main/references/conflict-checklist.md` for the detailed checklist.
+
+## `--gates`：合并后回归（可选）
+
+只有用户显式指定 `--gates` 时，才在 Step 7 后、最终报告前执行本阶段。原流程的冲突解决、连锁适配、基础验证和 merge/rebase 完成方式不变；合并尚未完成或有未解决冲突时，先解决，不能靠 gates 绕过。
+
+执行前完整读取 `~/.claude/skills/merge-main/references/gates-regression.md`，按其中的选择、执行、修复和报告规则处理。核心要求：
+
+1. 读取合并后的 `.github/workflows/gates-ci.{yml,yaml}` 及 caller、触发条件和仓库 CI 文档，选择实际命中的检查；不要固定运行一组通用 Go 测试冒充 gates-ci。
+2. 优先使用仓库现有本地调度器或 Make 入口。没有 gates-ci 时明确 `SKIPPED`，而不是静默省略。
+3. 逐项记录 `PASS` / `FAIL` / `FIXED` / `NOT RUN` / `BLOCKED`。只有实际执行并成功退出的检查才是 `PASS`；本地无法复现的 CI-only 步骤不等于通过。
+4. 失败先归因，再修复实现、测试或外围适配；定向复跑通过后，重跑所选 gates 集合。禁止通过跳过、放宽断言、白名单、缩减范围或调阈值修绿。
+5. gates 修复保持未提交，除非用户另行授权提交；不要擅自 amend 已完成的 merge 或改写 rebase 历史。
+6. 未指定 `--gates` 时，不读取上述 reference，不扫描 workflow，也不运行额外的 gates 回归。
 
 ## Gotchas
 

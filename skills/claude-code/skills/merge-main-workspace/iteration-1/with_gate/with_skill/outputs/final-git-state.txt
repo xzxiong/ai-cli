@@ -1,0 +1,8 @@
+$ git status --short
+ M calc.py
+
+$ git log --oneline --decorate -5
+d5b8c1c (HEAD -> feature) Merge branch 'main' into feature
+db77e67 Feature arithmetic implementation
+bc1212c (main) Main adds regression coverage
+a860bd9 Initial arithmetic

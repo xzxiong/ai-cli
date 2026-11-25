@@ -1,0 +1,10 @@
+{
+  "eval_id": 2,
+  "eval_name": "without_flag",
+  "prompt": "在隔离仓库 fixture 中执行 /merge-main main，不要运行额外的 gates 回归。",
+  "assertions": [
+    "完成普通 merge，但不进入可选 --gates 阶段。",
+    "不声称 gates-ci 已运行或通过。",
+    "只报告实际运行的基础检查，不擅自扩大验证范围。"
+  ]
+}

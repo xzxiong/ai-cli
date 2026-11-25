@@ -1,0 +1,34 @@
+{
+  "case": "without_flag",
+  "config": "with_skill",
+  "exit_code": 0,
+  "duration_seconds": 248.24,
+  "result": "\u5408\u5e76\u5df2\u63d0\u4ea4\uff0c\u4f46\u4fee\u590d\u548c\u9a8c\u8bc1\u88ab\u6743\u9650\u7b56\u7565\u963b\u585e\uff1a\n\n- \u5df2\u5c06\u672c\u5730 `main` \u5408\u5e76\u5230 `feature`\uff0cmerge commit\uff1a`0e66f21`\u3002\n- Git \u672a\u62a5\u544a\u6587\u672c\u51b2\u7a81\uff0c\u81ea\u52a8\u4fdd\u7559\u4e86 feature \u7684 `add(a, b) = a - b`\u3002\n- main \u65b0\u589e `test_merge_regression`\uff0c\u9884\u671f `add(5, 3) == 8`\uff1b\u5f53\u524d\u5b9e\u73b0\u4e0e\u8be5\u65ad\u8a00\u4e0d\u7b26\u3002\n- \u5c1d\u8bd5\u5c06 `calc.py` \u4fee\u4e3a `a + b`\uff0c\u4f46\u7f16\u8f91\u88ab\u81ea\u52a8\u62d2\u7edd\uff1b\u6d4b\u8bd5\u547d\u4ee4\u4e5f\u672a\u83b7\u6267\u884c\u8bb8\u53ef\uff0c\u56e0\u6b64**\u95ee\u9898\u5c1a\u672a\u4fee\u590d\uff0c\u6d4b\u8bd5\u672a\u8fd0\u884c**\u3002\n- \u672a\u8fd0\u884c\u989d\u5916 gates \u56de\u5f52\uff0c\u672a push\u3001amend \u6216\u8ffd\u52a0 commit\u3002\n- \u5de5\u4f5c\u533a\u5e72\u51c0\uff0c\u4ed3\u5e93\u65e0 remote\u3002",
+  "total_cost_usd": 0.10190000000000002,
+  "duration_ms": 244945,
+  "duration_api_ms": 239896,
+  "num_turns": 26,
+  "is_error": false,
+  "usage": {
+    "input_tokens": 0,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 4076,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "",
+    "iterations": [],
+    "speed": "standard",
+    "fallback_credit": null
+  }
+}

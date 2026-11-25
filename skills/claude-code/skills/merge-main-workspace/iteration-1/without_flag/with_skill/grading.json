@@ -1,0 +1,12 @@
+{
+  "expectations": [
+    {"text": "完成普通 merge，但不进入可选 --gates 阶段。", "passed": true, "evidence": "Agent completed merge commit 0e66f21 and explicitly reported no extra gates regression."},
+    {"text": "不声称 gates-ci 已运行或通过。", "passed": true, "evidence": "Response says tests were denied and gates were not run; no pass claim."},
+    {"text": "只报告实际运行的基础检查，不擅自扩大验证范围。", "passed": true, "evidence": "Response distinguishes merge completion from denied test execution; final fixture remains unchanged."}
+  ],
+  "summary": {"passed": 3, "failed": 0, "total": 3, "pass_rate": 1.0},
+  "execution_metrics": {"output_chars": 560, "transcript_chars": 0},
+  "timing": {"executor_duration_seconds": 248.24, "total_duration_seconds": 248.24},
+  "claims": [],
+  "user_notes_summary": {"uncertainties": ["This run verifies opt-in gating, not the original skill's build/test recommendations."], "needs_review": [], "workarounds": []}
+}

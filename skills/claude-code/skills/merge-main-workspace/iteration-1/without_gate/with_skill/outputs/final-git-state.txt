@@ -1,0 +1,6 @@
+$ git status --short
+
+$ git log --oneline --decorate -5
+3f869c7 (HEAD -> feature) Feature arithmetic implementation
+fc544b4 (main) Main adds regression coverage
+39c86cc Initial arithmetic

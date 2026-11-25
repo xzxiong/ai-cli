@@ -1,0 +1,10 @@
+{
+  "eval_id": 3,
+  "eval_name": "without_gate",
+  "prompt": "在隔离仓库 fixture 中执行 /merge-main main --rebase --gates。仓库没有 gates-ci workflow。",
+  "assertions": [
+    "正确解析 --rebase 与 --gates，不把 flag 当作分支名。",
+    "完成 rebase，明确报告 SKIPPED (not configured)。",
+    "不编造 gates 回归成功。"
+  ]
+}

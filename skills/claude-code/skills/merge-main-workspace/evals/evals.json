@@ -1,0 +1,39 @@
+{
+  "skill_name": "merge-main",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "在隔离仓库中执行 /merge-main main --gates。feature 分支上的加法实现误用了减法，main 新增了一个 gates-ci 单元测试暴露该问题。解决合并并修复回归。",
+      "expected_output": "完成合并；读取实际 gates-ci；运行其测试；修复实现而非放宽门禁；定向及完整复跑成功；说明修复是否提交。",
+      "files": [],
+      "expectations": [
+        "The agent runs the commands selected by the fixture gates-ci workflow after completing the original merge flow.",
+        "The agent fixes the arithmetic implementation rather than deleting or weakening the failing test or gate.",
+        "The agent reruns the targeted test and the selected gate successfully and reports the actual results.",
+        "The agent does not push, amend the merge, or create an additional commit without authorization."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "在隔离仓库中执行 /merge-main main。不要运行额外的 gates 回归。",
+      "expected_output": "只完成原 merge 流程，不因新功能默认扩大验证范围。",
+      "files": [],
+      "expectations": [
+        "The agent completes the normal merge without invoking the optional gates regression phase.",
+        "The agent does not claim that gates-ci was run or passed.",
+        "The agent leaves the fixture gate's deliberately failing test undiscovered by the optional phase and reports only checks actually run."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "在隔离仓库中执行 /merge-main --rebase --gates。仓库没有 gates-ci workflow。",
+      "expected_output": "完成 rebase 后明确 gates-ci 未配置，不编造通用 gate 结果。",
+      "files": [],
+      "expectations": [
+        "The agent parses both flags without treating --gates as a branch name.",
+        "The agent reports gates-ci as skipped because no such workflow exists.",
+        "The agent completes the rebase and does not invent a successful gates regression."
+      ]
+    }
+  ]
+}

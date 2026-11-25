@@ -1,0 +1,1 @@
+[claude-code:unrecognized_model] {"model":"kimi-k3.1-pro","query_source":"sdk"}

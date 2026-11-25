@@ -1,0 +1,42 @@
+{
+  "skill_name": "review-pr-scope",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "review-pr-scope #24353 —— geometry subtype 校验那个 PR，帮我看实现是不是做胖了，对照 issue 收敛一下。不要发 PR 评论。",
+      "expected_output": "产出 Scope Review 中文报告：抽出 1～3 条核心目标与关键成果；对照 diff 给出删改清单；允许保留丰富测试；默认不调用 gh pr comment。若存在无成果支撑的封装/校验重复，应标 🟡/🔴。",
+      "files": [],
+      "expectations": [
+        "Report title or heading indicates Scope Review",
+        "Includes Core Goals section with 1–3 goals framed as delivery intent",
+        "Includes Key Outcomes and Non-goals",
+        "Includes a actionable delete/simplify table with I-N ids",
+        "Does not treat abundant tests as over-design by default",
+        "Does not post a PR comment unless --comment was in the prompt"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "这个 PR 感觉加了幂等和一层 Validator 接口，issue 只是要修 TransferPage IO fault 下 DN OOM。用缩小实现方案审一下 https://github.com/matrixorigin/matrixone/pull/24337",
+      "expected_output": "识别核心目标为有界重试/防 OOM；将无需求支撑的幂等与单实现 Validator 接口标为收敛项；Keep 有界重试与相关测试；中文删改清单。",
+      "files": [],
+      "expectations": [
+        "States core goal around bounded retry / prevent DN OOM",
+        "Flags unnecessary idempotency as convergence candidate when not required by issue",
+        "Flags single-implementation interface / excess encapsulation if present in diff narrative",
+        "Keep summary preserves the bounded-retry outcome path and its tests",
+        "Output is in Chinese"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "review-pr #24377 看看有没有问题",
+      "expected_output": "不应主路径走 review-pr-scope；应走通用 review-pr / 完整 Code Review。若模型误用本 skill，应在评估中记失败。",
+      "files": [],
+      "expectations": [
+        "Does not primarily execute review-pr-scope workflow for a generic review-pr request",
+        "Routes to general PR review behavior instead of scope-shrink checklist as the main deliverable"
+      ]
+    }
+  ]
+}
