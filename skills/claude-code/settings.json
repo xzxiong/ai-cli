@@ -91,6 +91,7 @@
       "Skill(*)",
       "Skill(update-config)",
       "mcp__codegraph__*",
+      "mcp__memoria",
       "mcp__memoria__*"
     ]
   }

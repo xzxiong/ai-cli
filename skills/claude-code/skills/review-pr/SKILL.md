@@ -2,7 +2,7 @@
 name: review-pr
 description: |
   对 PR 进行全面 Code Review，输出结构化审查报告（中文）。支持多种模式：
-  - 标准模式（默认）：面向成熟方案，全面审查代码质量、测试、性能、安全、LLM Prompt 等
+  - 标准模式（默认）：面向成熟方案，全面审查代码质量、测试充分性与冗余、性能、安全、SQL/数据访问（含 N+1、权限、低效 SQL）、Goal-Result 对齐（是否真正解决问题）、LLM Prompt 等
   - Fast 模式（`--fast`）：高信号静态审查，不跑测试/CI，快速给出可证实问题
   - 探索模式（`--explore`）：面向 Demo/PoC，侧重方案梳理、逻辑自洽、可观测性、可迭代性
   - Ops 模式（`--ops` 或自动识别）：面向基础设施/部署仓库，侧重资源配置、安全、影响范围
@@ -10,7 +10,8 @@ description: |
   Use this skill when:
   - The user says "review pr" followed by a PR URL or number
   - The user invokes `/review-pr <PR_URL>` or `/review-pr #<number>`
-  - The user says "review"、"代码审查"、"看下这个 PR" with a PR URL or number
+  - The user says "review"、"代码审查"、"看下这个 PR"、"deep review" with a PR URL or number
+  - The user asks to check SQL efficiency / N+1 / permission / happy+unhappy case / test redundancy on a PR
   - The user says "review pr --fast" / "fast review" / "快速 review" for static-only review
   - The user says "review pr --explore" or "探索性review" for exploratory/demo PRs
   - The user says "review pr --ops" or PR is from ops/gitops/moi-gitops/moi-op/ob-ops repos
@@ -106,7 +107,9 @@ gh api repos/<OWNER>/<REPO>/issues/<number>/comments --jq '.[] | select(.author_
   - 仅使用 fast checklist；报告必须显式写出“测试未执行”
 - **标准模式** → Read `~/.claude/skills/review-pr/references/standard-checklist.md`（骨架）
   - 始终 Read：`section-testing.md`、`section-risks.md`
-  - 条件触发 Read：`section-architecture.md`（满足深度开关条件时）
+  - 条件触发 Read：
+    - `section-architecture.md`（满足深度开关条件时）
+    - `section-data-access.md`（diff 含 SQL / ORM / 事务 / migration / 权限 DDL 时）
 - **探索模式** → Read `~/.claude/skills/review-pr/references/explore-checklist.md`
 - **Ops 模式** → Read `~/.claude/skills/review-pr/references/ops-checklist.md`
 

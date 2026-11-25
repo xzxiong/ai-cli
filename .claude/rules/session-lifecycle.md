@@ -1,4 +1,4 @@
-<!-- memoria-version: 0.3.3-->
+<!-- memoria-version: 0.5.2-->
 
 # Session Lifecycle Management
 
