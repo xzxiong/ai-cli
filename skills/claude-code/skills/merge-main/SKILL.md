@@ -7,6 +7,8 @@ description: |
   外围工具适配（CI/CD、Dockerfile、scripts 等），确保合并后代码可编译、可通过测试。
   支持 `--gates`：完成原合并后，按 .github/workflows 中 gates-ci 的选择与命令执行本地回归，
   修复测试问题并复跑；未加此参数时保持原有行为。
+  支持 `--review`：合并后对比目标 base 分支，按 review-pr 标准流程本地审查，
+  自动修复必须修改与建议修改的问题并复审；不自动发布 PR 评论或提交修复。
 
   Use this skill when:
   - The user says "merge main", "合并 main", "merge latest main"
@@ -26,8 +28,9 @@ description: |
 
 - `--rebase`：使用 rebase 而非 merge。
 - `--gates`：完成原有合并和 Step 7 后，运行 gates-ci 本地回归并修复测试问题。默认不启用。基础验证与 gates 选择重叠时保留最终结果，无需机械重复同一命令。
+- `--review`：完成合并后，对比当前分支与本次目标 base 分支，执行 `review-pr` 本地审查，自动修复所有有证据的 🔴 必须修改与 🟡 建议修改问题，验证并复审。默认不启用；不自动发布 PR 评论、提交修复或 push。
 
-`/merge-main [branch] [--rebase] [--gates]` 中的 flags 可组合、顺序不限；`--gates` 不接受值。不要把 `--gates` 当成目标分支。
+`/merge-main [branch] [--rebase] [--gates] [--review]` 中的 flags 可组合、顺序不限；`--gates` 与 `--review` 均不接受值。不要把 flags 当成目标分支。`--review` 默认使用 review-pr 标准模式（Ops 仓库自动使用 Ops 模式），不是 `--fast` 的别名。
 
 ## 默认分支检测
 
@@ -174,7 +177,7 @@ go test ./tests/e2e/... -count=1 -short 2>&1 | tail -20
 
 ### Step 7. 完成合并
 
-如果指定了 `--gates`，后续 gate 修复不属于本步；按下面的可选阶段处理，不自动追加提交。
+如果指定了 `--gates` 或 `--review`，后续修复不属于本步；按下面的可选阶段处理，不自动追加提交。
 
 ```bash
 # 如果是 merge 模式
@@ -185,9 +188,9 @@ git commit    # 使用默认的 merge commit message
 git rebase --continue
 ```
 
-### Step 8. 报告
+### Step 8. 可选阶段与报告
 
-输出合并报告：
+只有指定 `--gates` / `--review` 时才执行对应可选阶段；两者同时启用时先 gates、后 review/fix、再按 review reference 复跑 gates 和复审。完成所有启用的阶段后输出合并报告：
 ```
 ✅ Merged: <upstream>/<branch> into <current-branch>
 📁 Conflicts resolved: N files
@@ -212,6 +215,19 @@ Read `~/.claude/skills/merge-main/references/conflict-checklist.md` for the deta
 4. 失败先归因，再修复实现、测试或外围适配；定向复跑通过后，重跑所选 gates 集合。禁止通过跳过、放宽断言、白名单、缩减范围或调阈值修绿。
 5. gates 修复保持未提交，除非用户另行授权提交；不要擅自 amend 已完成的 merge 或改写 rebase 历史。
 6. 未指定 `--gates` 时，不读取上述 reference，不扫描 workflow，也不运行额外的 gates 回归。
+
+## `--review`：合并后审查与自动修复（可选）
+
+只有用户显式指定 `--review` 时，才在 Step 7 后、最终报告前执行本阶段。执行前完整读取 `~/.claude/skills/merge-main/references/review-fix.md`，按其中的基线、审查、修复、复审和报告规则处理。核心要求：
+
+1. base 固定为本次 fetch 后的 `<upstream-remote>/<target-branch>`；用 merge-base 三点 diff 审查当前分支全部改动和合并结果，而非只看 merge commit 引入的上游改动。
+2. 通过 Skill 工具调用 `review-pr`，默认标准模式、Ops 仓库自动 Ops；复用其设计上下文、深度开关、checklist、证据和分级规范。不能只跑 Fast 模式冒充完整审查。
+3. 没有 PR / Issue / 设计文档 / GitHub 权限不能成为跳过本地代码审查的理由；可只读获取现有 PR 上下文，但跳过 `review-pr` 的归档和发布阶段，禁止自动折叠评论、`gh pr comment`、`gh pr review` 或 push。
+4. 自动修复所有经代码复核成立的 🔴 必须修改与 🟡 建议修改问题，🟢 可选优化默认不处理。误报或客观阻塞项须记录理由；不能静默丢弃 finding，也不能靠弱化测试、权限或功能修绿。
+5. 修复后执行定向及受影响回归，并对最终工作区重新审查；仍有可处理问题时继续修复与复审。报告逐项说明 `FIXED` / `REJECTED` / `BLOCKED`，不得把未执行验证写成通过。
+6. 与 `--gates` 同用时顺序为：原 Step 7 → gates 修复 → review/fix → 定向验证 → gates 最终复跑 → 最终 review 复审。相同检查可复用同一最终代码上的成功结果，但不能省略 gates 最终回归。
+7. review 修复保持未提交，除非用户另行授权提交；不要擅自 amend 已完成的 merge、改写 rebase 历史或覆盖 gates 阶段修复。
+8. 未指定 `--review` 时，不读取上述 reference，不启动额外 review/fix。
 
 ## Gotchas
 
