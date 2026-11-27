@@ -25,6 +25,8 @@ run: ## Run ai-cli with ARGS, example: make run ARGS="skills --install --tools c
 
 install: ## Install skills/knowledge from repo to local tools (TOOLS=all|codex|kiro|claude-code)
 	GOCACHE=$(GOCACHE) $(GO) run ./cmd/ai-cli skills --install --tools $(TOOLS)
+	mkdir -p $(HOME)/.astra/skills
+	rsync -a $(HOME)/.claude/skills/ $(HOME)/.astra/skills/
 
 upload: ## Upload local skills/knowledge to repo and run diff-merge-commit-push (TOOLS=all|codex|kiro|claude-code)
 	GOCACHE=$(GOCACHE) $(GO) run ./cmd/ai-cli skills --upload --tools $(TOOLS)
