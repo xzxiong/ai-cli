@@ -1,7 +1,8 @@
 ---
 name: review-pr
 description: |
-  对 PR 进行全面 Code Review，输出结构化审查报告（中文）。支持多种模式：
+  对 PR 或本地 diff 进行全面 Code Review，输出结构化审查报告（中文）。支持多种模式：
+  - 本地模式（`--local [base-ref]` 或 `--diff <path>`）：无需 PR，审查工作区或指定 diff，默认不发布 GitHub 评论/决议
   - 标准模式（默认）：面向成熟方案，全面审查代码质量、测试充分性与冗余、性能、安全、SQL/数据访问（含 N+1、权限、低效 SQL）、Goal-Result 对齐（是否真正解决问题）、LLM Prompt 等
   - Fast 模式（`--fast`）：高信号静态审查，不跑测试/CI，快速给出可证实问题
   - 探索模式（`--explore`）：面向 Demo/PoC，侧重方案梳理、逻辑自洽、可观测性、可迭代性
@@ -15,15 +16,31 @@ description: |
   - The user says "review pr --fast" / "fast review" / "快速 review" for static-only review
   - The user says "review pr --explore" or "探索性review" for exploratory/demo PRs
   - The user says "review pr --ops" or PR is from ops/gitops/moi-gitops/moi-op/ob-ops repos
+  - The user invokes `/review-pr --local [base-ref]` / `/review-pr --diff <path>`，或要求审查本地分支差异、工作区改动、现有 diff 文件
 ---
 
 # Review PR
 
-对 PR 进行全面 Code Review，输出结构化审查报告（中文）。先选择模式，再以具体发现为主，不要先写空泛摘要。
+对 PR 或本地 diff 进行全面 Code Review，输出结构化审查报告（中文）。先选择模式，再以具体发现为主，不要先写空泛摘要。
 
 ## 输入
 
-`$ARGUMENTS`：PR URL 或 `#number`，可选 flag：`--fast`、`--explore`、`--ops`、`--with-issue`
+`$ARGUMENTS`：PR URL / `#number`，或本地 diff 参数；可选 flag：`--fast`、`--explore`、`--ops`、`--with-issue`。
+
+```text
+/review-pr <PR_URL | #number> [--fast | --explore | --ops] [--with-issue]
+/review-pr --local [base-ref] [--fast | --explore | --ops] [--with-issue]
+/review-pr --diff <path> [--fast | --explore | --ops] [--with-issue]
+```
+
+本地数据来源规则：
+
+- 也可直接用自然语言指定本地 base-ref 或现有 diff 文件，无需 PR；参数形式优先使用下面两种 flags。
+- `--local` 不带 base-ref：审查 `HEAD` 到当前工作区的全部改动（staged、unstaged、未跟踪文件）。
+- `--local <base-ref>`：审查 `merge-base(base-ref, HEAD)` 到当前工作区的完整改动，包含当前分支已有提交和未提交修改。不会自动 fetch 或切换分支。
+- `--diff <path>`：直接审查现有 Git unified diff 文件；不与 `--local` 或 PR 参数组合。
+- 本地模式与标准 / Fast / 探索 / Ops 模式正交，默认不依赖 PR 或 `gh`，不自动修复代码，也不发布 GitHub 评论/决议。
+- **执行本地模式前完整读取** `~/.claude/skills/review-pr/references/local-review.md`，用其规则替换 Step 1/2 的数据获取、Step 4 的 PR 专属报告字段及 Step 5-8 的归档/发布行为；其余 checklist、深度开关和审查标准保持完整。
 
 ## 模式
 
@@ -37,7 +54,7 @@ description: |
 1. `--fast` → Fast 模式（显式优先于自动模式识别）
 2. `--explore` → 探索模式
 3. `--ops` → Ops 模式
-4. PR 来自 `ops`/`gitops`/`moi-gitops`/`moi-op`/`ob-ops` 仓库 → Ops 模式（自动识别）
+4. PR 来自、或本地仓库 remote URL 指向 `ops`/`gitops`/`moi-gitops`/`moi-op`/`ob-ops` 仓库 → Ops 模式（自动识别）
 5. 否则 → **标准模式**
 
 不要把 `--fast` 与 `--explore` / `--ops` 组合使用；若 flag 冲突，先请用户选一种模式。
@@ -60,7 +77,7 @@ description: |
 
 ## 执行流程
 
-### Step 1. 获取 PR 数据
+### Step 1. 获取审查数据（PR 或本地 diff）
 
 ```bash
 # 元数据
@@ -75,9 +92,9 @@ gh pr diff <number> --repo <OWNER/REPO> 2>&1 | sed -n '<START>,<END>p'
 
 **读取优先级**：业务逻辑（handler/service/processor） > schema/model > 配置 > 测试 > 文档
 
-### Step 2. 提取设计文档
+### Step 2. 提取设计文档 / 本地设计上下文
 
-**始终执行**。从以下位置搜索设计文档/方案描述（按优先级）：
+**始终执行**。PR 模式从以下位置搜索设计文档/方案描述（按优先级）；本地模式改按 `local-review.md` 的本地来源执行，无 PR / Issue / 设计文档不能阻止代码审查：
 
 1. **PR body**：查找「设计文档」「方案」「设计」「design」链接或内联描述
 2. **关联 Issue**：从 PR body / commit message 提取 issue 编号，获取 issue body + comments
@@ -126,7 +143,9 @@ gh api repos/<OWNER>/<REPO>/issues/<number>/comments --jq '.[] | select(.author_
 
 ### Step 5. 归档
 
-保存到 `~/pr_review/<repo>_PR<number>_<title>_<YYYYMMDD>.md`。
+本地模式：按 `local-review.md` 处理，默认不生成持久归档；Step 6-8 全部跳过，禁止自动发布或提交 GitHub review。
+
+PR 模式保存到 `~/pr_review/<repo>_PR<number>_<title>_<YYYYMMDD>.md`。
 已存在则重命名旧文件为 `_bakNNN.md` 保留（NNN 从 001 递增）。
 
 ### Step 6. 折叠历史审查评论
@@ -233,8 +252,8 @@ EOF
 
 1. 大 PR 先用 `grep -n` 定位文件边界，按需 `sed -n` 读取，避免 context 溢出
 2. swagger.json / docs.go / generated 文件跳过
-3. 私有仓库必须用 `gh` CLI（不能 web_fetch）
-4. diff 不足以判断时用 `gh api` 获取完整文件辅助
+3. PR 模式的私有仓库必须用 `gh` CLI（不能 web_fetch）；本地模式直接读取本地文件，无需 PR 权限
+4. PR 模式的 diff 不足以判断时用 `gh api` 获取完整文件辅助；本地模式读取当前工作区，显式 diff 无法对应工作区时注明上下文边界
 5. 二进制文件（.png/.pdf）跳过 diff，仅确认存在
 6. Fast 模式禁止执行测试/CI 验证动作；可读测试文件，但不能据此声称测试通过
 7. Step 7/8 不要因「只看到 `ok commented`」就重跑 `gh pr review`：`gh pr review` 成功时常无同等醒目回显；合并进同一条 shell 时更容易误判。重试前必须按 Step 8 规则 4 查同 SHA 是否已有相同决议（matrixflow#16956 曾因此对同一 head 提交两条相同的 `CHANGES_REQUESTED`）
